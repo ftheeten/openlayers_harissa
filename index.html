@@ -1,0 +1,547 @@
+<meta charset="UTF-8">
+<html>
+
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<link rel="stylesheet" href="./js/bootstrap-5.0.0-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="./js/openlayers/v6.5.0-dist/ol.css">
+<link rel="stylesheet" href="./js/bootstrap-datepicker-master/dist/css/bootstrap-datepicker.standalone.css">
+<link rel="stylesheet" href="./js/select2/dist/css/select2.min.css">
+<script src="./js/jquery/jquery-min-3.6.0.js"></script>
+<script src="./js/bootstrap-5.0.0-dist/js/bootstrap.min.js"></script>
+<script src="./js/openlayers/v6.5.0-dist/ol.js"></script>
+<script src="./js/bootstrap-datepicker-master/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="./js/select2/dist/js/select2.full.min.js"></script>
+</head>
+
+<body>
+<style>
+      p.collapse{
+         display:none;
+      }
+      
+      .ol-popup {
+        position: absolute;
+        background-color: white;
+		color:blue;
+        -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 280px;
+      }
+      .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+      }
+      .ol-popup-closer:after {
+        content: "✖";
+      }
+      
+
+
+
+</style>
+
+<div class="container">
+	<div class="row ">
+	    <div class="col-md-2 d-flex justify-content-md-end">
+			Date from 
+		</div>
+		<div class="col-md-6">
+		<input type="text" name="date_from" id="date_from"/>
+		</div>
+		
+	</div>
+	<div class="row">
+		<div class="col-md-2 d-flex justify-content-md-end">
+			Date to 
+		</div>
+		<div class="col-md-4">
+		<input type="text" name="date_to" id="date_to"/>
+		</div>
+		<div class="col-md-6"></div>
+    </div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				territoires
+			</div>
+			<div class="col-md-4">
+			<select name="territoires" id="territoires" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>	
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Type de catastrophe
+			</div>
+			<div class="col-md-4">
+			<input type="text" name="categ" id="categ"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">	
+		<div class="col-md-3 d-flex justify-content-md-end">
+			<input type="button" value="Search" id="search_map" name="search_map"></input>
+		</div>
+		<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-4">
+			display Nord-Kivu <input type="checkbox" id="display_nk" name="display_nk" checked/>
+			</div>
+			<div class="col-md-4">
+			display Sud-Kivu <input type="checkbox" id="display_sk" name="display_sk" checked/>
+			</div>
+			<div class="col-md-4">
+			display seismes <input type="checkbox" id="display_seisme" name="display_seisme" checked/>
+			</div>
+	</div>	
+	<div class="row">
+		<div class="com-sm-12">
+			<div id="map" style="width:100%; height:600px;">
+			</div>
+		
+		<div id="mouse-position"></div>
+		<div id="popup" class="ol-popup">
+			  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+			  <div id="popup-content"></div>
+		 </div>
+        <div>	
+		
+	</div>
+</div>
+<script>
+
+
+var map;
+var background;
+var mousePositionControl;
+var scaleline;
+var wms_url="https://edit.africamuseum.be/geoserver/harissa/wms?";
+var wfs_url="https://edit.africamuseum.be/geoserver/harissa/wfs?";
+var name_layer_north_kivu='harissa:territoires_nk_1';
+var wms_layers_north_kivu;
+var name_layer_south_kivu='harissa:territoires_sk_0';
+var wms_layers_south_kivu;
+var name_layer_seismes='harissa:seismes';
+var name_field_territories="territoire";
+var wms_cluster_seismes;
+var wms_layers_seismes;
+var wfs_layers_seismes;
+var url_list_territoires= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_seismes+"&PROPERTYNAME="+ name_field_territories+"&outputFormat=application%2Fjson";
+
+var displayed_layers=Array();
+var removed_layers=Array();
+
+var displayed_layer;
+var disaster_loaded=false;
+//var popup_text;
+//popup
+var overlay;
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+var closer = document.getElementById('popup-closer');
+
+	
+ var init_overlay=function()
+ {
+	 
+	overlay = new ol.Overlay(/** @type {olx.OverlayOptions} */ ({
+               element: container,
+                    autoPan: true,
+                    autoPanAnimation: {
+                      duration: 250
+                    }
+                  }));
+                  
+
+     closer.onclick = function() {
+                    overlay.setPosition(undefined);
+                    closer.blur();
+                    return false;
+                  };
+     map.addOverlay(overlay);
+ } 
+ 
+function init_wfs(cql_filter)
+{
+	console.log("INIT WFS");
+	 
+	  
+	      if(disaster_loaded)
+		  {
+		    console.log("enlève");
+			map.removeLayer(displayed_layer);
+			//displayed_layer=null;
+		  }
+		  
+		  var vectorSource = new ol.source.Vector({
+			  format: new ol.format.GeoJSON(),
+			  url: function (extent) 
+				  {
+					 console.log(cql_filter);
+					 if(cql_filter.length==0)
+					 {
+						 var tmp_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_seismes +'&' +
+						  'outputFormat=application/json&srsname=EPSG:4326&' +
+						  'bbox=' +
+						  extent.join(',') + ',EPSG:4326'
+						;
+					}
+					else
+					{
+						var tmp_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_seismes +'&' +
+						  'outputFormat=application/json&srsname=EPSG:4326&' +
+						  'CQL_FILTER=' + cql_filter
+						  'bbox=' +
+						  extent.join(',') + ',EPSG:4326'
+						;
+					}
+					return tmp_url;
+				  },
+			  strategy: ol.loadingstrategy.bbox,
+			});
+        console.log(vectorSource.getFeatures());
+		
+		var clusterSource = new ol.source.Cluster({
+		  distance: 40,
+		  source: vectorSource,
+		});
+ 
+        var styleCache = {};
+		displayed_layer = new ol.layer.Vector({		  
+		   source: clusterSource,		   
+		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+     	  style: function (feature) {		  
+		    var data_zoom_level=feature.get('features');			
+			var size = data_zoom_level.length;			
+			var style = styleCache[size];
+			if (!style) {
+			  style = new ol.style.Style({
+				image: new ol.style.Circle({
+				  radius: 15,
+				  stroke: new ol.style.Stroke({
+					color: '#fff',
+				  }),
+				  fill: new ol.style.Fill({
+					color: '#3399CC',
+				  }),
+				}),
+				text: new ol.style.Text({
+				  text: size.toString(),
+				  fill: new ol.style.Fill({
+					color: '#fff',
+				  }),
+				}),
+			  });
+			  styleCache[size] = style;
+			}
+			return style;
+		  }
+		  
+		});
+		//display the cluster layer	
+        //map is a global variable already created in "init"	
+        //trigger the request
+        console.log("affiche");		
+		map.addLayer(displayed_layer);
+		displayed_layers.push("display_seisme");
+		disaster_loaded=true;
+		
+
+
+}
+
+//pop up helper
+function isCluster(feature) {
+      if (!feature || !feature.get('features')) { 
+            return false; 
+      }
+      return feature.get('features').length >= 1;
+    }
+  
+
+function init()
+{
+	background=new ol.layer.Tile(
+	{source: new ol.source.OSM()}
+	);
+	
+	//position mouse
+	 mousePositionControl = new ol.control.MousePosition({
+	  
+	  projection: 'EPSG:4326',
+	  // comment the following two lines to have the mouse position
+	  // be placed within the map.
+	  className: 'custom-mouse-position',
+	  target: document.getElementById('mouse-position'),
+	  undefinedHTML: '&nbsp;',
+	});
+	
+	//barre échelle
+	 scaleline =new ol.control.ScaleLine({
+      //units: unitsSelect.value,
+    });
+	
+	//WMS
+	var init_src_wms=function(url, name_layer)
+	{
+		var tmp_layer;
+		tmp_layer=new ol.source.TileWMS(
+		{
+			url: url ,
+			serverType: 'geoserver',
+			params: {'LAYERS':name_layer , 'TILED': true},
+			transition: 0,
+		}
+		);
+
+		return tmp_layer;
+	}
+   
+    wms_layers_north_kivu = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_north_kivu)
+		}
+	);
+	
+	wms_layers_south_kivu = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_south_kivu)
+		}
+	);
+	
+
+
+
+	map=new ol.Map(
+	{
+		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
+		  target:"map", 
+          layers: [background, wms_layers_north_kivu, wms_layers_south_kivu],
+		   view: new ol.View(
+		   { 
+				projection: 'EPSG:4326',
+				center: [29.5,-2],
+				zoom: 7
+			})			
+	});
+	//attach popup
+	init_overlay();
+	displayed_layers.push("display_nk");
+	displayed_layers.push("display_sk");
+	
+	//display data popup
+	map.on('click', function(evt) {
+				var coordinate = evt.coordinate;
+				var hdms = ol.coordinate.toStringHDMS(coordinate);
+			  var feature = map.forEachFeatureAtPixel(evt.pixel, 
+							  function(feature) { return feature; });
+			  if (isCluster(feature)) {
+				//var popup = new ol.Overlay.Popup();
+				//map.addOverlay(popup);
+			 
+			   var html="";
+				// is a cluster, so loop through all the underlying features
+				var features = feature.get('features');
+				for(var i = 0; i < features.length; i++) {
+				  // here you'll have access to your normal attributes:
+				  //console.log(features[i].get('name'));
+			     
+				  html+="<a><u>"+(features[i].get('dw_code')||'')+" "+ (features[i].get('id')||'') +" "+ (features[i].get('type')||'') + " "+ (features[i].get('date')||'') + "</u></a>"+"<br/>";
+				  
+				}
+			   
+				 content.innerHTML = '<p>' + html +'</p>';
+					overlay.setPosition(coordinate);
+			  } 
+			});	
+
+
+}
+
+
+var build_query=function(date_from, date_to, categ)
+{
+	var criteria=Array();
+	
+	if(date_from.length>0)
+	{
+		console.log("a date from");
+		criteria.push("date >='"+date_from+"'");
+		
+	}
+	if(date_to.length>0)
+	{
+		console.log("a date to");
+		criteria.push("date <='"+date_to+"'");
+	}
+	if(categ.length>0)
+	{
+		console.log("categ");
+		criteria.push("type='"+categ+"'");
+	}
+	
+	var text_query=criteria.join(" AND ");
+	console.log(text_query);
+	init_wfs(text_query);
+}
+
+var do_search=function()
+{
+    var date_from=$("#date_from").val();
+	var date_to=$("#date_to").val();
+	var categ=$("#categ").val();
+	console.log(categ);
+	console.log(date_to);
+	console.log(date_from);
+	build_query(date_from, date_to, categ);
+}
+
+var hide_show_display=function(name_ctrl, layer)
+{
+	if(displayed_layers.includes(name_ctrl))
+	{
+	    console.log(displayed_layers);
+		var i=displayed_layers.indexOf(name_ctrl);
+		displayed_layers.splice(i,1);
+		 console.log(displayed_layers);
+		removed_layers.push(name_ctrl);
+		map.removeLayer(layer);
+	}
+	else if(removed_layers.includes(name_ctrl))
+	{
+	    console.log(removed_layers);
+		var i=removed_layers.indexOf(name_ctrl);
+		removed_layers.splice(i,1);
+		 console.log(removed_layers);
+		displayed_layers.push(name_ctrl);
+		map.addLayer(layer);
+	}
+}
+
+//code run when page loaded
+$(document).ready(
+
+	function()
+	{
+	    //date
+		$("#date_from").datepicker( 
+			{
+				format: 'yyyy-mm-dd'
+			}
+		);
+		$("#date_to").datepicker( 
+			{
+				format: 'yyyy-mm-dd'
+			}
+		);
+		//click
+		$("#search_map").click(
+			function()
+			{
+				do_search();
+			}
+		);
+		//autocomplete
+		
+		$("#territoires").select2(
+			{
+			    ajax: 
+				{
+					url: url_list_territoires,
+					dataType: 'jsonp',
+					data: function (params) {
+					   console.log(params);
+					  return params;
+					},				
+					processResults: function (data) 
+					{
+						console.log("resultat");
+						//console.log(data);
+						//console.log(params);
+						return [
+							{id:"hello world",
+							text: "helloworld"}
+						];
+					}
+				},
+				
+				multiple:true,
+				placeholder: 'Search for a territories',
+			
+				minimumInputLength: 1
+			}
+		);
+		
+		$("#display_nk").click(
+			function()
+			{
+				hide_show_display("display_nk", wms_layers_north_kivu);
+			}
+		);
+		$("#display_sk").click(
+			function()
+			{
+				hide_show_display("display_sk", wms_layers_south_kivu);
+			}
+		);
+		
+		$("#display_seisme").click(
+			function()
+			{				
+				hide_show_display("display_seisme", displayed_layer);
+			}
+		);
+		
+		//end clicc
+		console.log("test");
+		//create map
+		init();
+		//add cluster seism
+		init_wfs("");
+	}
+
+);
+
+
+
+
+
+</script>
+
+
+</body>
+
+</html>
