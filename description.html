@@ -1,0 +1,264 @@
+<meta charset="UTF-8">
+<html>
+
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<link rel="stylesheet" href="./js/bootstrap-5.0.0-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="./js/openlayers/v6.5.0-dist/ol.css">
+
+<script src="./js/jquery/jquery-min-3.6.0.js"></script>
+<script src="./js/bootstrap-5.0.0-dist/js/bootstrap.min.js"></script>
+<script src="./js/openlayers/v6.5.0-dist/ol.js"></script>
+
+</head>
+
+<body>
+<style>
+      p.collapse{
+         display:none;
+      }
+
+      
+
+
+
+</style>
+<div class="container">
+    <div class="row ">
+		<div class="col-md-2 d-flex justify-content-md-begin">
+			<a href="http://africamuseum.be"><img style="max-width:200px" src="./img/MRAC_logo.png"/></a>
+		</div>
+		<div class="col-md-8 d-flex">
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+			<img style="width:200px; height:48px;" src="./img/CBD_logo_FR_CMYK.jpg"/>
+		</div>
+	</div>
+	<div class="row">
+		<div class="com-sm-12">
+			<div id="map" style="width:50%; height:400px;">
+			</div>
+		
+		<div id="mouse-position"></div>
+		<div id="popup" class="ol-popup">
+			  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+			  <div id="popup-content"></div>
+		 </div>
+        <div>	
+		Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="Bing" selected="selected">Bing satellite</option>
+					 </select>
+	</div>
+	<div class="row">
+	<div class="com-sm-12">
+		Description:
+		<table id="table_description" name="table_description" class="table_description">
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+	</div>
+</div>
+<script>
+var id=null;
+var map;
+var osm_background;
+var displayed_layer;
+var mousePositionControl;
+var scaleline;
+var wms_url="https://edit.africamuseum.be/geoserver/harissa/wms?";
+var wfs_url="https://edit.africamuseum.be/geoserver/harissa/wfs?";
+var name_layer_territoires='harissa:territoires_harissa';
+var wms_layers_territoires;
+var name_layer_provinces='harissa:provinces_harissa';
+var wms_layers_provinces;
+var name_layer_secteurs='harissa:secteurs_harissa';
+var wms_layers_secteurs;
+var name_layer_aleas='harissa:v_aleas_harissa_with_date_all';
+var name_field_territories="territoire";
+var vectorSource;
+var features;
+var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
+
+var findGetParameter=function(parameterName) 
+{
+    var result = null,
+        tmp = [];
+    location.search
+        .substr(1)
+        .split("&")
+        .forEach(function (item) {
+          tmp = item.split("=");
+          if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+        });
+    return result;
+}
+
+function display_data(data)
+{
+	console.log(data);
+	var table_body=$("#table_description").find("tbody");
+	console.log(data["id"]);
+	table_body.append("<tr><td>id</td><td>"+data["id"]+"</td></tr>");
+	table_body.append("<tr><td>type</td><td>"+data["type"]+"</td></tr>");
+	table_body.append("<tr><td>date</td><td>"+data["date"]+"</td></tr>");
+	table_body.append("<tr><td>territoire</td><td>"+data["territoire"]+"</td></tr>");
+	table_body.append("<tr><td>latitude</td><td>"+data["lat"]+"</td></tr>");
+	table_body.append("<tr><td>longitude</td><td>"+data["lon"]+"</td></tr>");
+	table_body.append("<tr><td>altitude</td><td>"+data["alt"]+"</td></tr>");
+	table_body.append("<tr><td>colcom</td><td>"+data["colcom"]+"</td></tr>");
+    table_body.append("<tr><td>grpqua</td><td>"+data["grpqua"]+"</td></tr>");
+	table_body.append("<tr><td>vilcel</td><td>"+data["vilcel"]+"</td></tr>");
+	table_body.append("<tr><td>morts</td><td>"+data["nmort"]+"</td></tr>");
+	table_body.append("<tr><td>blessés</td><td>"+data["nblesse"]+"</td></tr>");
+	table_body.append("<tr><td>sans-abris</td><td>"+data["nsansabris"]+"</td></tr>");
+	table_body.append("<tr><td>impact logement</td><td>"+data["logement"]+"</td></tr>");
+	table_body.append("<tr><td>impact route</td><td>"+data["route"]+"</td></tr>");
+	table_body.append("<tr><td>impact pont</td><td>"+data["pont"]+"</td></tr>");
+	table_body.append("<tr><td>impact culture</td><td>"+data["culture"]+"</td></tr>");
+	table_body.append("<tr><td>surface vivrière</td><td>"+data["svivriere"]+"</td></tr>");
+	table_body.append("<tr><td>surface rente</td><td>"+data["srente"]+"</td></tr>");
+	table_body.append("<tr><td>surface forêt</td><td>"+data["sforet"]+"</td></tr>");
+	table_body.append("<tr><td>impact bétail</td><td>"+data["betail"]+"</td></tr>");
+	table_body.append("<tr><td>mise à jour technique</td><td>"+data["max"]+"</td></tr>");
+	
+}
+function display_alea(p_id)
+{
+    var tmp_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
+						  'outputFormat=application/json&srsname=EPSG:4326&' +
+						  'CQL_FILTER=id%3D'+p_id 
+						;
+	
+	$.getJSON( tmp_url, function( data ) {
+			features=new ol.format.GeoJSON().readFeatures(data);
+			 display_data(data.features[0]["properties"]);
+			var center=features[0].getGeometry().getCoordinates();
+			 vectorSource = new ol.source.Vector({
+				features:features,
+			});
+			displayed_layer = new ol.layer.Vector({		  
+			   source: vectorSource,		   
+			   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+			  style: new ol.style.Style({
+					image: new ol.style.Circle({
+					  radius: 15,
+					  stroke: new ol.style.Stroke({
+						color: '#fff',
+					  }),
+					  fill: new ol.style.Fill({
+						color: '#3399CC',
+					  }),
+					}),
+					text: new ol.style.Text({
+					  text: "1",
+					  fill: new ol.style.Fill({
+						color: '#fff',
+					  }),
+					}),
+				  }) 
+			  
+		});
+		map.addLayer(displayed_layer);
+		 
+		var tmp_view=new ol.View(
+			   { 
+					projection: 'EPSG:4326',
+					center: center,
+					zoom: 11
+				});
+		map.setView(tmp_view);	
+	});
+    vectorSource = new ol.source.Vector({
+			  format: new ol.format.GeoJSON(),
+			  url: tmp_url,
+			  strategy: ol.loadingstrategy.bbox,
+			});
+	
+	
+			
+}
+
+function init(p_id)
+{
+	
+	osm_background=new ol.layer.Tile(
+			{
+			source: new ol.source.OSM(),
+			visible: false,
+			
+			}
+		);
+	bing_background=new ol.layer.Tile(
+			{
+			visible: true,
+			source: new ol.source.BingMaps(
+				{
+					key:bing_key,
+					imagerySet: 'AerialWithLabelsOnDemand'
+				}
+			)
+			}
+		);
+	//position mouse
+	 mousePositionControl = new ol.control.MousePosition({
+	  
+	  projection: 'EPSG:4326',
+	  // comment the following two lines to have the mouse position
+	  // be placed within the map.
+	  className: 'custom-mouse-position',
+	  target: document.getElementById('mouse-position'),
+	  undefinedHTML: '&nbsp;',
+	});
+	
+	//barre échelle
+	 scaleline =new ol.control.ScaleLine({
+      //units: unitsSelect.value,
+    });
+	map=new ol.Map(
+	{
+		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
+		  target:"map", 
+          layers: [osm_background,bing_background],
+		  
+	});
+	display_alea(p_id);
+}
+
+$(document).ready(
+
+	function()
+	{
+		console.log("init");
+		id=findGetParameter("id");
+		console.log(id);
+		init(id);
+		$("#select_background").change(
+			function()
+			{
+				console.log($("#select_background").val());
+				var tmp_val=$("#select_background").val();
+				if(tmp_val=="Bing")
+				{
+					bing_background.setVisible(true);
+					osm_background.setVisible(false);
+				}
+				else if(tmp_val=="OpenStreetMap")
+				{
+					bing_background.setVisible(false);
+					osm_background.setVisible(true);
+				}
+			}
+		);
+	}
+	);
+</script>
+
+
+</body>
+
+</html>

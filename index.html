@@ -33,7 +33,9 @@
         border: 1px solid #cccccc;
         bottom: 12px;
         left: -50px;
-        min-width: 280px;
+        min-width: 380px;
+		max-height: 600px;
+		overflow-y:scroll;
       }
       .ol-popup:after, .ol-popup:before {
         top: 100%;
@@ -73,6 +75,16 @@
 
 <div class="container">
 	<div class="row ">
+		<div class="col-md-2 d-flex justify-content-md-begin">
+			<a href="http://africamuseum.be"><img style="max-width:200px" src="./img/MRAC_logo.png"/></a>
+		</div>
+		<div class="col-md-8 d-flex">
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+			<img style="width:200px; height:48px;" src="./img/CBD_logo_FR_CMYK.jpg"/>
+		</div>
+	</div>
+	<div class="row ">
 	    <div class="col-md-2 d-flex justify-content-md-end">
 			Date from 
 		</div>
@@ -92,22 +104,100 @@
     </div>
 	<div class="row">
 			<div class="col-md-2 d-flex justify-content-md-end">
+				province
+			</div>
+			<div class="col-md-4">
+			<select name="provinces" id="provinces" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>	
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
 				territoires
 			</div>
 			<div class="col-md-4">
 			<select name="territoires" id="territoires" style="width: 100%"></select>
 			</div>
 			<div class="col-md-6"></div>
-	</div>	
+	</div>
 	<div class="row">
 			<div class="col-md-2 d-flex justify-content-md-end">
-				Type de catastrophe
+				secteurs
 			</div>
 			<div class="col-md-4">
-			<input type="text" name="categ" id="categ"/>
+			<select name="secteurs" id="secteurs" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>		
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Type d'aléas
+			</div>
+			<div class="col-md-4">
+			<select name="categ" id="categ" style="width: 100%"></select>
 			</div>
 			<div class="col-md-6"></div>
 	</div>
+	<div class="row">
+			<div class="col-md-12">
+				<br/>
+			</div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Morts
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="morts" id="morts"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Blesses
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="blesses" id="blesses"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Sans-abris
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="homelesses" id="homelesses"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Impact logement
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="logement" id="logement"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Impact agriculture
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="cultures" id="cultures"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Impact bétail
+			</div>
+			<div class="col-md-4">
+			<input type="checkbox" name="cattle" id="cattle"/>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	
 	<div class="row">	
 		<div class="col-md-3 d-flex justify-content-md-end">
 			<input type="button" value="Search" id="search_map" name="search_map"></input>
@@ -116,13 +206,16 @@
 	</div>
 	<div class="row">
 			<div class="col-md-4">
-			display Nord-Kivu <input type="checkbox" id="display_nk" name="display_nk" checked/>
+			display provinces <input type="checkbox" id="display_provinces" name="display_provinces" />
 			</div>
 			<div class="col-md-4">
-			display Sud-Kivu <input type="checkbox" id="display_sk" name="display_sk" checked/>
+			display territories <input type="checkbox" id="display_territories" name="display_territories" />
 			</div>
 			<div class="col-md-4">
-			display seismes <input type="checkbox" id="display_seisme" name="display_seisme" checked/>
+			display secteurs <input type="checkbox" id="display_secteurs" name="display_secteurs" />
+			</div>
+			<div class="col-md-4">
+			display disaster <input type="checkbox" id="display_aleas" name="display_aleas" checked/>
 			</div>
 	</div>	
 	<div class="row">
@@ -136,28 +229,40 @@
 			  <div id="popup-content"></div>
 		 </div>
         <div>	
-		
+		Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="Bing" selected="selected">Bing satellite</option>
+					 </select>
 	</div>
 </div>
 <script>
 
 
 var map;
-var background;
+var osm_background;
+var bing_background;
 var mousePositionControl;
 var scaleline;
 var wms_url="https://edit.africamuseum.be/geoserver/harissa/wms?";
 var wfs_url="https://edit.africamuseum.be/geoserver/harissa/wfs?";
-var name_layer_north_kivu='harissa:territoires_nk_1';
-var wms_layers_north_kivu;
-var name_layer_south_kivu='harissa:territoires_sk_0';
-var wms_layers_south_kivu;
-var name_layer_seismes='harissa:seismes';
+var name_layer_territoires='harissa:territoires_harissa';
+var wms_layers_territoires;
+var name_layer_provinces='harissa:provinces_harissa';
+var wms_layers_provinces;
+var name_layer_secteurs='harissa:secteurs_harissa';
+var wms_layers_secteurs;
+var name_layer_aleas='harissa:v_aleas_harissa_with_date_all';
 var name_field_territories="territoire";
+var name_field_types="type";
 var wms_cluster_seismes;
 var wms_layers_seismes;
 var wfs_layers_seismes;
-var url_list_territoires= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_seismes+"&PROPERTYNAME="+ name_field_territories+"&outputFormat=application%2Fjson";
+var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
+
+var url_list_provinces= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_provinces+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_secteurs= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_secteurs+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_territoires= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_aleas+"&PROPERTYNAME="+ name_field_territories+"&outputFormat=application%2Fjson";
+var url_list_types= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_aleas+"&PROPERTYNAME="+ name_field_types +"&outputFormat=application%2Fjson";
 
 var displayed_layers=Array();
 var removed_layers=Array();
@@ -171,6 +276,11 @@ var container = document.getElementById('popup');
 var content = document.getElementById('popup-content');
 var closer = document.getElementById('popup-closer');
 
+
+var openDescription=function(id)
+{
+	window.open('description?id='+ id,'_blank');
+}
 	
  var init_overlay=function()
  {
@@ -192,27 +302,69 @@ var closer = document.getElementById('popup-closer');
      map.addOverlay(overlay);
  } 
  
+ 
+var parse_wfs_list=function(url, attribute, sel2)
+ {
+    
+	var list=$.getJSON( url, function( data ) {
+		var items=[];
+		var returned=[];
+		var features=data["features"];
+		for(var i=0; i<features.length;i++)
+		{
+			var tmp=features[i];
+			var tmp2=tmp["properties"][attribute];
+			if(!items.includes(tmp2))
+			{
+				items.push(tmp2);
+				
+			}
+		}
+		items.sort();
+		for(var i=0; i<items.length;i++)
+		{
+			var tmp_dict={};
+			var tmp2=items[i];
+			tmp_dict["id"]=tmp2;
+			tmp_dict["text"]=tmp2;
+			returned.push(tmp_dict);
+		}
+		
+		$(sel2).select2({
+		  data: returned,
+		  multiple:true
+		})
+				//return returned;		
+	});
+	
+	
+ }
+
 function init_wfs(cql_filter)
 {
-	console.log("INIT WFS");
+	//console.log("INIT WFS");
 	 
-	  
+	      parse_wfs_list(url_list_provinces,"nom", "#provinces");
+		  parse_wfs_list(url_list_secteurs,"nom", "#secteurs");
+	      parse_wfs_list(url_list_territoires,"territoire", "#territoires");
+		  parse_wfs_list(url_list_types,"type", "#categ");
+		 
 	      if(disaster_loaded)
 		  {
-		    console.log("enlève");
+		    //console.log("enlève");
 			map.removeLayer(displayed_layer);
 			//displayed_layer=null;
 		  }
 		  
-		  var vectorSource = new ol.source.Vector({
+		   vectorSource = new ol.source.Vector({
 			  format: new ol.format.GeoJSON(),
 			  url: function (extent) 
 				  {
-					 console.log(cql_filter);
+					 //console.log(cql_filter);
 					 if(cql_filter.length==0)
 					 {
 						 var tmp_url=wfs_url +
-						  'version=1.1.0&request=GetFeature&typename='+ name_layer_seismes +'&' +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
 						  'outputFormat=application/json&srsname=EPSG:4326&' +
 						  'bbox=' +
 						  extent.join(',') + ',EPSG:4326'
@@ -221,18 +373,17 @@ function init_wfs(cql_filter)
 					else
 					{
 						var tmp_url=wfs_url +
-						  'version=1.1.0&request=GetFeature&typename='+ name_layer_seismes +'&' +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
 						  'outputFormat=application/json&srsname=EPSG:4326&' +
 						  'CQL_FILTER=' + cql_filter
-						  'bbox=' +
-						  extent.join(',') + ',EPSG:4326'
+						  
 						;
 					}
 					return tmp_url;
 				  },
 			  strategy: ol.loadingstrategy.bbox,
 			});
-        console.log(vectorSource.getFeatures());
+        //console.log(vectorSource.getFeatures());
 		
 		var clusterSource = new ol.source.Cluster({
 		  distance: 40,
@@ -244,10 +395,20 @@ function init_wfs(cql_filter)
 		   source: clusterSource,		   
 		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
      	  style: function (feature) {		  
-		    var data_zoom_level=feature.get('features');			
+		    var data_zoom_level=feature.get('features');	
+		
 			var size = data_zoom_level.length;			
 			var style = styleCache[size];
 			if (!style) {
+			   var col_def='#3399CC';
+			  if(size>0)
+			  {
+				var type_geo_ref=data_zoom_level[0].get("type_georef");
+				if(type_geo_ref=='no_coords')
+				{
+				 col_def='#339900';
+				}
+			  }
 			  style = new ol.style.Style({
 				image: new ol.style.Circle({
 				  radius: 15,
@@ -255,7 +416,7 @@ function init_wfs(cql_filter)
 					color: '#fff',
 				  }),
 				  fill: new ol.style.Fill({
-					color: '#3399CC',
+					color: col_def,
 				  }),
 				}),
 				text: new ol.style.Text({
@@ -274,9 +435,9 @@ function init_wfs(cql_filter)
 		//display the cluster layer	
         //map is a global variable already created in "init"	
         //trigger the request
-        console.log("affiche");		
+        //console.log("affiche");		
 		map.addLayer(displayed_layer);
-		displayed_layers.push("display_seisme");
+		displayed_layers.push("display_aleas");
 		disaster_loaded=true;
 		
 
@@ -294,10 +455,24 @@ function isCluster(feature) {
 
 function init()
 {
-	background=new ol.layer.Tile(
-	{source: new ol.source.OSM()}
-	);
-	
+	osm_background=new ol.layer.Tile(
+			{
+			source: new ol.source.OSM(),
+			visible: false,
+			
+			}
+		);
+	bing_background=new ol.layer.Tile(
+			{
+			visible: true,
+			source: new ol.source.BingMaps(
+				{
+					key:bing_key,
+					imagerySet: 'AerialWithLabelsOnDemand'
+				}
+			)
+			}
+		);
 	//position mouse
 	 mousePositionControl = new ol.control.MousePosition({
 	  
@@ -330,15 +505,21 @@ function init()
 		return tmp_layer;
 	}
    
-    wms_layers_north_kivu = new ol.layer.Tile(
+    wms_layers_territoires = new ol.layer.Tile(
 		{
-			source: init_src_wms(wms_url, name_layer_north_kivu)
+			source: init_src_wms(wms_url, name_layer_territoires)
 		}
 	);
 	
-	wms_layers_south_kivu = new ol.layer.Tile(
+	wms_layers_provinces = new ol.layer.Tile(
 		{
-			source: init_src_wms(wms_url, name_layer_south_kivu)
+			source: init_src_wms(wms_url, name_layer_provinces)
+		}
+	);
+	
+	wms_layers_secteurs = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_secteurs)
 		}
 	);
 	
@@ -349,7 +530,7 @@ function init()
 	{
 		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
 		  target:"map", 
-          layers: [background, wms_layers_north_kivu, wms_layers_south_kivu],
+          layers: [bing_background, osm_background],
 		   view: new ol.View(
 		   { 
 				projection: 'EPSG:4326',
@@ -359,8 +540,9 @@ function init()
 	});
 	//attach popup
 	init_overlay();
-	displayed_layers.push("display_nk");
-	displayed_layers.push("display_sk");
+	removed_layers.push("display_provinces");
+	removed_layers.push("display_territories");
+	removed_layers.push("display_secteurs");
 	
 	//display data popup
 	map.on('click', function(evt) {
@@ -375,11 +557,18 @@ function init()
 			   var html="";
 				// is a cluster, so loop through all the underlying features
 				var features = feature.get('features');
+				var key_sort=[]
+				var feature_bag={};
 				for(var i = 0; i < features.length; i++) {
+					key_sort[key_sort.length] = features[i].get('id');
+					feature_bag[features[i].get('id')]=features[i];
+				}
+				key_sort.sort();
+				for(var i = 0; i < key_sort.length; i++) {
 				  // here you'll have access to your normal attributes:
-				  //console.log(features[i].get('name'));
-			     
-				  html+="<a><u>"+(features[i].get('dw_code')||'')+" "+ (features[i].get('id')||'') +" "+ (features[i].get('type')||'') + " "+ (features[i].get('date')||'') + "</u></a>"+"<br/>";
+				  ////console.log(features[i].get('name'));
+			     var tmp_feat=feature_bag[key_sort[i]];
+				  html+="<a onclick=\"openDescription('"+(tmp_feat.get('id'))+"')\"><u>"+ (tmp_feat.get('id')||'') +" "+ (tmp_feat.get('type')||'') + " "+ (tmp_feat.get('date')||'') + "</u></a>"+"<br/>";
 				  
 				}
 			   
@@ -391,31 +580,109 @@ function init()
 
 }
 
+var array_criteria=function(field, param)
+{
+		var crit_tmp=Array();
+		for(var i=0; i<param.length; i++)
+		{
+			crit_tmp.push(field+"='"+param[i].replace("'","''")+"'");
+		}
+		return "("+crit_tmp.join(" OR ")+")";
+}
 
-var build_query=function(date_from, date_to, categ)
+var intersect_criteria=function( layer_shape, field, param)
+{
+		var crit_tmp=Array();
+		for(var i=0; i<param.length; i++)
+		{
+			crit_tmp.push("INTERSECTS(geom, querySingle('"+layer_shape+"','geom','"+field+"= ''"+  param[i]+"'''))");
+		}
+		return "("+crit_tmp.join(" OR ")+")";
+}
+
+var build_query=function(date_from, date_to, categ, provinces, territoires, secteurs, morts, blesses, homelesses, logement, cultures, cattle)
 {
 	var criteria=Array();
-	
+	var criteria_impact=Array();
+	var text_query=0;
 	if(date_from.length>0)
 	{
-		console.log("a date from");
+		//console.log("a date from");
 		criteria.push("date >='"+date_from+"'");
 		
 	}
 	if(date_to.length>0)
 	{
-		console.log("a date to");
+		//console.log("a date to");
 		criteria.push("date <='"+date_to+"'");
 	}
 	if(categ.length>0)
 	{
-		console.log("categ");
-		criteria.push("type='"+categ+"'");
+		
+		criteria.push(array_criteria("type", categ ));
+	}
+	if(provinces.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_provinces, "nom" , provinces));
 	}
 	
-	var text_query=criteria.join(" AND ");
-	console.log(text_query);
-	init_wfs(text_query);
+	if(territoires.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_territoires, "nom" , territoires));
+	}
+	
+	if(secteurs.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_secteurs, "nom" , secteurs));
+	}
+	if(morts)
+	{
+		criteria_impact.push("nmort > 0");
+	}
+	if(blesses)
+	{
+		criteria_impact.push("nblesse > 0");
+	}
+	if(homelesses)
+	{
+		criteria_impact.push("nsansabris > 0");
+	}
+	if(logement)
+	{
+		criteria_impact.push("logement ='oui'");
+	}
+	if(cultures)
+	{
+		criteria_impact.push("culture ='oui'");
+	}
+	if(cattle)
+	{
+		criteria_impact.push("betail ='oui'");
+	}
+	if(criteria.length>0 && criteria_impact.length>0)
+	{
+		//console.log(" A ");
+		text_query=criteria.join(" AND ") + " AND "+ criteria_impact.join(" OR ");
+	}
+	else if(criteria.length==0 && criteria_impact.length>0)
+	{
+	    //console.log(" B ");
+		text_query= criteria_impact.join(" OR ");
+	}
+	else if(criteria.length>0 && criteria_impact.length==0)
+	{
+	    //console.log(" C ");
+		text_query=criteria.join(" AND ");
+	}
+
+	if(text_query.length>0)
+	{
+		console.log(text_query);
+		init_wfs(text_query);
+	}
 }
 
 var do_search=function()
@@ -423,29 +690,42 @@ var do_search=function()
     var date_from=$("#date_from").val();
 	var date_to=$("#date_to").val();
 	var categ=$("#categ").val();
-	console.log(categ);
-	console.log(date_to);
-	console.log(date_from);
-	build_query(date_from, date_to, categ);
+	var provinces=$("#provinces").val();
+	var territoires=$("#territoires").val();
+	var secteurs=$("#secteurs").val();
+	var morts=$("#morts").prop("checked");
+	var blesses=$("#blesses").prop("checked");
+	var homelesses=$("#homelesses").prop("checked");
+	var logement=$("#logement").prop("checked");
+	var cultures=$("#cultures").prop("checked");
+	var cattle=$("#cattle").prop("checked");
+	//console.log(provinces);
+	//console.log(territoires);
+	//console.log(secteurs);
+	//console.log(categ);
+	//console.log(date_to);
+	//console.log(date_from);
+	//console.log(morts);
+	build_query(date_from, date_to, categ, provinces, territoires, secteurs, morts, blesses, homelesses, logement, cultures, cattle);
 }
 
 var hide_show_display=function(name_ctrl, layer)
 {
 	if(displayed_layers.includes(name_ctrl))
 	{
-	    console.log(displayed_layers);
+	    //console.log(displayed_layers);
 		var i=displayed_layers.indexOf(name_ctrl);
 		displayed_layers.splice(i,1);
-		 console.log(displayed_layers);
+		 //console.log(displayed_layers);
 		removed_layers.push(name_ctrl);
 		map.removeLayer(layer);
 	}
 	else if(removed_layers.includes(name_ctrl))
 	{
-	    console.log(removed_layers);
+	    //console.log(removed_layers);
 		var i=removed_layers.indexOf(name_ctrl);
 		removed_layers.splice(i,1);
-		 console.log(removed_layers);
+		 //console.log(removed_layers);
 		displayed_layers.push(name_ctrl);
 		map.addLayer(layer);
 	}
@@ -474,63 +754,57 @@ $(document).ready(
 				do_search();
 			}
 		);
-		//autocomplete
 		
-		$("#territoires").select2(
-			{
-			    ajax: 
-				{
-					url: url_list_territoires,
-					dataType: 'jsonp',
-					data: function (params) {
-					   console.log(params);
-					  return params;
-					},				
-					processResults: function (data) 
-					{
-						console.log("resultat");
-						//console.log(data);
-						//console.log(params);
-						return [
-							{id:"hello world",
-							text: "helloworld"}
-						];
-					}
-				},
-				
-				multiple:true,
-				placeholder: 'Search for a territories',
-			
-				minimumInputLength: 1
-			}
-		);
-		
-		$("#display_nk").click(
+		$("#display_provinces").click(
 			function()
 			{
-				hide_show_display("display_nk", wms_layers_north_kivu);
+				hide_show_display("display_provinces", wms_layers_provinces);
 			}
 		);
-		$("#display_sk").click(
+		$("#display_territories").click(
 			function()
 			{
-				hide_show_display("display_sk", wms_layers_south_kivu);
+				hide_show_display("display_territories", wms_layers_territoires);
 			}
 		);
 		
-		$("#display_seisme").click(
+		$("#display_secteurs").click(
+			function()
+			{
+				hide_show_display("display_secteurs", wms_layers_secteurs);
+			}
+		);
+		$("#display_aleas").click(
 			function()
 			{				
-				hide_show_display("display_seisme", displayed_layer);
+				hide_show_display("display_aleas", displayed_layer);
 			}
 		);
 		
 		//end clicc
-		console.log("test");
+		//console.log("test");
 		//create map
 		init();
 		//add cluster seism
 		init_wfs("");
+		
+		$("#select_background").change(
+			function()
+			{
+				console.log($("#select_background").val());
+				var tmp_val=$("#select_background").val();
+				if(tmp_val=="Bing")
+				{
+					bing_background.setVisible(true);
+					osm_background.setVisible(false);
+				}
+				else if(tmp_val=="OpenStreetMap")
+				{
+					bing_background.setVisible(false);
+					osm_background.setVisible(true);
+				}
+			}
+		);
 	}
 
 );
