@@ -147,60 +147,53 @@
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Morts
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="morts" id="morts"/>
 			</div>
-			<div class="col-md-6"></div>
-	</div>
-	<div class="row">
+			
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Blesses
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="blesses" id="blesses"/>
 			</div>
-			<div class="col-md-6"></div>
-	</div>
-	<div class="row">
+
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Sans-abris
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="homelesses" id="homelesses"/>
 			</div>
-			<div class="col-md-6"></div>
-	</div>
-	<div class="row">
+
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Impact logement
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="logement" id="logement"/>
 			</div>
-			<div class="col-md-6"></div>
-	</div>
-	<div class="row">
+
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Impact agriculture
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="cultures" id="cultures"/>
 			</div>
-			<div class="col-md-6"></div>
-	</div>
-	<div class="row">
+
 			<div class="col-md-2 d-flex justify-content-md-end">
 				Impact bétail
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-2">
 			<input type="checkbox" name="cattle" id="cattle"/>
 			</div>
-			<div class="col-md-6"></div>
+			
 	</div>
 	
 	<div class="row">	
 		<div class="col-md-3 d-flex justify-content-md-end">
 			<input type="button" value="Search" id="search_map" name="search_map"></input>
+		</div>
+		<div class="col-md-3 d-flex justify-content-md-begin">
+			<a href="." target="_blank" value="" id="download_csv">Télécharger le résultat (CSV)</a>
 		</div>
 		<div class="col-md-6"></div>
 	</div>
@@ -233,8 +226,11 @@
 						<option value="OpenStreetMap">OpenStreetMap</option>
 						<option value="Bing" selected="selected">Bing satellite</option>
 					 </select>
+		</div>
+		</div>
 	</div>
-</div>
+	
+</div>	
 <script>
 
 
@@ -275,6 +271,7 @@ var overlay;
 var container = document.getElementById('popup');
 var content = document.getElementById('popup-content');
 var closer = document.getElementById('popup-closer');
+var download_url;
 
 
 var openDescription=function(id)
@@ -369,15 +366,27 @@ function init_wfs(cql_filter)
 						  'bbox=' +
 						  extent.join(',') + ',EPSG:4326'
 						;
+						download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
+						  'outputFormat=csv&srsname=EPSG:4326&' +
+						  'bbox=' +
+						  extent.join(',') + ',EPSG:4326'
+						;
+						$("#download_csv").attr("href",download_url );
 					}
 					else
 					{
 						var tmp_url=wfs_url +
 						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
 						  'outputFormat=application/json&srsname=EPSG:4326&' +
-						  'CQL_FILTER=' + cql_filter
-						  
+						  'CQL_FILTER=' + cql_filter						  
 						;
+						download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
+						  'outputFormat=csv&srsname=EPSG:4326&' +
+						  'CQL_FILTER=' + cql_filter						  
+						;
+						$("#download_csv").attr("href",download_url );
 					}
 					return tmp_url;
 				  },
