@@ -345,9 +345,7 @@ var parse_wfs_list=function(url, attribute, sel2)
 
 function init_wfs(cql_filter)
 {
-	console.log("INIT WFS");
-	console.log(cql_filter);
-	console.log("DONE");
+	
 	 
 	      parse_wfs_list(url_list_provinces,"nom", "#provinces");
 		  parse_wfs_list(url_list_secteurs,"nom", "#secteurs");
@@ -361,104 +359,85 @@ function init_wfs(cql_filter)
 			//displayed_layer=null;
 		  }
 		  
-		   vectorSource = new ol.source.Vector({
-			  format: new ol.format.GeoJSON(),
-			  url: function (extent) 
-				  {
-					 //console.log(cql_filter);
-					 if(cql_filter.length==0)
-					 {
-						 var tmp_url=wfs_url +
+		  var json_url=null;
+		  if(cql_filter.length==0)
+		  {
+			json_url=wfs_url +
 						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
-						  'outputFormat=application/json&srsname=EPSG:4326&' +
-						  'bbox=' +
-						  extent.join(',') + ',EPSG:4326'
-						;
-						download_url=wfs_url +
-						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
-						  'outputFormat=csv&srsname=EPSG:4326&' +
-						  'bbox=' +
-						  extent.join(',') + ',EPSG:4326'
-						;
-						$("#download_csv").attr("href",download_url );
-					}
-					else
-					{
-						var tmp_url=wfs_url +
+						  'outputFormat=application/json&srsname=EPSG:4326';
+		  }
+		  else
+		  {
+			json_url=wfs_url +
 						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
 						  'outputFormat=application/json&srsname=EPSG:4326&' +
 						  'CQL_FILTER=' + cql_filter						  
 						;
-						download_url=wfs_url +
-						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
-						  'outputFormat=csv&srsname=EPSG:4326&' +
-						  'CQL_FILTER=' + cql_filter						  
-						;
-						$("#download_csv").attr("href",download_url );
-					}
-					return tmp_url;
-				  },
-			  strategy: ol.loadingstrategy.bbox,
-			});
-        //console.log(vectorSource.getFeatures());
-		
-		var clusterSource = new ol.source.Cluster({
-		  distance: 40,
-		  source: vectorSource,
-		});
- 
-        var styleCache = {};
-		displayed_layer = new ol.layer.Vector({		  
-		   source: clusterSource,		   
-		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
-     	  style: function (feature) {		  
-		    var data_zoom_level=feature.get('features');	
-		
-			var size = data_zoom_level.length;			
-			var style = styleCache[size];
-			if (!style) {
-			   var col_def='#3399CC';
-			  if(size>0)
-			  {
-				var type_geo_ref=data_zoom_level[0].get("type_georef");
-				if(type_geo_ref=='no_coords')
-				{
-				 col_def='#339900';
-				}
-			  }
-			  style = new ol.style.Style({
-				image: new ol.style.Circle({
-				  radius: 15,
-				  stroke: new ol.style.Stroke({
-					color: '#fff',
-				  }),
-				  fill: new ol.style.Fill({
-					color: col_def,
-				  }),
-				}),
-				text: new ol.style.Text({
-				  text: size.toString(),
-				  fill: new ol.style.Fill({
-					color: '#fff',
-				  }),
-				}),
-			  });
-			  styleCache[size] = style;
-			}
-			return style;
 		  }
 		  
-		});
-		//display the cluster layer	
-        //map is a global variable already created in "init"	
-        //trigger the request
-        //console.log("affiche");		
-		map.addLayer(displayed_layer);
-		displayed_layers.push("display_aleas");
-		disaster_loaded=true;
+		  $.getJSON( json_url, function( data ) {
+			console.log(data);
+				var vectorSource = new ol.source.Vector({
+					features: new ol.format.GeoJSON().readFeatures(data)
+				});
+				var clusterSource = new ol.source.Cluster({
+				  distance: 40,
+				  source: vectorSource,
+				});
+				 var styleCache = {};
+				 
+		  displayed_layer = new ol.layer.Vector({		  
+		   source: clusterSource,		   
+		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+     	  style: function (feature_tmp) {		  
+		    var data_zoom_level=feature_tmp.get('features');	
 		
-
-
+			var size = feature_tmp.get('features').length;	
+				
+					var style = styleCache[size];
+					if (!style) {
+					   var col_def='#3399CC';
+					  if(size>0)
+					  {
+						var type_geo_ref=data_zoom_level[0].get("type_georef");
+						if(type_geo_ref=='no_coords')
+						{
+						 col_def='#339900';
+						}
+					  }
+					  style = new ol.style.Style({
+						image: new ol.style.Circle({
+						  radius: 15,
+						  stroke: new ol.style.Stroke({
+							color: '#fff',
+						  }),
+						  fill: new ol.style.Fill({
+							color: col_def,
+						  }),
+						}),
+						text: new ol.style.Text({
+						  text: size.toString(),
+						  fill: new ol.style.Fill({
+							color: '#fff',
+						  }),
+						}),
+					  });
+					  styleCache[size] = style;
+					}
+					return style;
+				  }
+				  
+				});
+				//display the cluster layer	
+				//map is a global variable already created in "init"	
+				//trigger the request
+				//console.log("affiche");		
+				map.addLayer(displayed_layer);
+				displayed_layers.push("display_aleas");
+				disaster_loaded=true;
+				
+				
+		  });
 }
 
 //pop up helper
@@ -565,6 +544,7 @@ function init()
 	map.on('click', function(evt) {
 				var coordinate = evt.coordinate;
 				var hdms = ol.coordinate.toStringHDMS(coordinate);
+				console.log("click");
 			  var feature = map.forEachFeatureAtPixel(evt.pixel, 
 							  function(feature) { return feature; });
 			  if (isCluster(feature)) {
@@ -573,12 +553,12 @@ function init()
 			 
 			   var html="";
 				// is a cluster, so loop through all the underlying features
-				var features = feature.get('features');
+				var features_tmp = feature.get('features');
 				var key_sort=[]
 				var feature_bag={};
-				for(var i = 0; i < features.length; i++) {
-					key_sort[key_sort.length] = features[i].get('id');
-					feature_bag[features[i].get('id')]=features[i];
+				for(var i = 0; i < features_tmp.length; i++) {
+					key_sort[key_sort.length] = features_tmp[i].get('id');
+					feature_bag[features_tmp[i].get('id')]=features_tmp[i];
 				}
 				key_sort.sort();
 				for(var i = 0; i < key_sort.length; i++) {
