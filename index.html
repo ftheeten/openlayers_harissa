@@ -76,7 +76,7 @@
 <div class="container">
 	<div class="row ">
 		<div class="col-md-2 d-flex justify-content-md-begin">
-			<a href="http://africamuseum.be"><img style="max-width:200px" src="./img/MRAC_logo.png"/></a>
+			<a href="https://www.africamuseum.be"><img style="max-width:200px" src="./img/MRAC_logo.png"/></a>
 		</div>
 		<div class="col-md-8 d-flex">
 		</div>
@@ -365,6 +365,11 @@ function init_wfs(cql_filter)
 			json_url=wfs_url +
 						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
 						  'outputFormat=application/json&srsname=EPSG:4326';
+		    download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
+						  'outputFormat=csv&srsname=EPSG:4326';
+						  
+			$("#download_csv").attr("href", download_url);
 		  }
 		  else
 		  {
@@ -373,6 +378,12 @@ function init_wfs(cql_filter)
 						  'outputFormat=application/json&srsname=EPSG:4326&' +
 						  'CQL_FILTER=' + cql_filter						  
 						;
+			download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
+						  'outputFormat=csv&srsname=EPSG:4326&' +
+						  'CQL_FILTER=' + cql_filter						  
+						;
+			$("#download_csv").attr("href", download_url);
 		  }
 		  
 		  $.getJSON( json_url, function( data ) {
@@ -565,7 +576,7 @@ function init()
 				  // here you'll have access to your normal attributes:
 				  ////console.log(features[i].get('name'));
 			     var tmp_feat=feature_bag[key_sort[i]];
-				  html+="<a onclick=\"openDescription('"+(tmp_feat.get('id'))+"')\"><u>"+ (tmp_feat.get('id')||'') +" "+ (tmp_feat.get('type')||'') + " "+ (tmp_feat.get('date')||'') + "</u></a>"+"<br/>";
+				  html+="<a target='_blank' href='./description.html?id="+ tmp_feat.get('id') +"' ><u>"+ (tmp_feat.get('id')||'') +" "+ (tmp_feat.get('type')||'') + " "+ (tmp_feat.get('date')||'') + "</u></a>"+"<br/>";
 				  
 				}
 			   
@@ -800,6 +811,8 @@ $(document).ready(
 				}
 			}
 		);
+		
+		
 	}
 
 );
