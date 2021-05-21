@@ -213,8 +213,8 @@
 	</div>
 	<div class="row">
 		<div class="com-sm-12">
-			Cercle bleu : données géoréférencées <br>
-			Cercle vert : données sans coordonnées (centre du territoire)
+			Cercle vert : données géoréférencées <br>
+			Cercle bleu : données sans coordonnées (centre du territoire)
 		</div>
     </div>		
 	<div class="row">
@@ -313,9 +313,13 @@ var parse_wfs_list=function(url, attribute, sel2)
 		var items=[];
 		var returned=[];
 		var features=data["features"];
+		//console.log("features : ");
+		//console.log(features);
 		for(var i=0; i<features.length;i++)
 		{
 			var tmp=features[i];
+			//console.log("tmp (dans boucle) : ");
+			//console.log(tmp);
 			var tmp2=tmp["properties"][attribute];
 			if(!items.includes(tmp2))
 			{
@@ -323,7 +327,11 @@ var parse_wfs_list=function(url, attribute, sel2)
 				
 			}
 		}
+		//console.log("items non triés");
+		//console.log(items);
 		items.sort();
+		//console.log("items triés");
+		//console.log(items);
 		for(var i=0; i<items.length;i++)
 		{
 			var tmp_dict={};
@@ -332,7 +340,10 @@ var parse_wfs_list=function(url, attribute, sel2)
 			tmp_dict["text"]=tmp2;
 			returned.push(tmp_dict);
 		}
+		//console.log("select 2:");
+		//console.log(returned);
 		
+		//initialisé dans l'Ajax pour synchroniser
 		$(sel2).select2({
 		  data: returned,
 		  multiple:true
@@ -407,15 +418,17 @@ function init_wfs(cql_filter)
 				
 					var style = styleCache[size];
 					if (!style) {
-					   var col_def='#3399CC';
-					  if(size>0)
+					  
+					  var col_def='#3399CC';
+					  for(var i=0; i<size;i++)
 					  {
-						var type_geo_ref=data_zoom_level[0].get("type_georef");
-						if(type_geo_ref=='no_coords')
+						var type_geo_ref=data_zoom_level[i].get("type_georef");
+						if(type_geo_ref!='no_coords')
 						{
 						 col_def='#339900';
 						}
 					  }
+					  
 					  style = new ol.style.Style({
 						image: new ol.style.Circle({
 						  radius: 15,
@@ -439,14 +452,21 @@ function init_wfs(cql_filter)
 				  }
 				  
 				});
-				//display the cluster layer	
-				//map is a global variable already created in "init"	
-				//trigger the request
-				//console.log("affiche");		
+						
 				map.addLayer(displayed_layer);
 				displayed_layers.push("display_aleas");
 				disaster_loaded=true;
-				
+				var extent = vectorSource.getExtent();
+				 map.getView().fit(extent, map.getSize());
+				   if(map.getView().getZoom()>10)
+				   {
+					 map.getView().setZoom(10);
+				   }
+				   if(map.getView().getZoom()>1)
+				   {
+					   map.getView().setZoom(map.getView().getZoom()-1);
+				   }
+							
 				
 		  });
 }
@@ -639,12 +659,14 @@ var build_query=function(date_from, date_to, categ, provinces, territoires, sect
 	{
 		
 		criteria.push(intersect_criteria(name_layer_territoires, "nom" , territoires));
+		
 	}
 	
 	if(secteurs.length>0)
 	{
 		
 		criteria.push(intersect_criteria(name_layer_secteurs, "nom" , secteurs));
+		criteria.push("(NOT(lat IS NULL) AND NOT(lon Is NULL))");
 	}
 	if(morts)
 	{
@@ -687,7 +709,7 @@ var build_query=function(date_from, date_to, categ, provinces, territoires, sect
 	}
 
 	
-		//console.log(text_query);
+		console.log(text_query);
 		init_wfs(text_query);
 }
 
