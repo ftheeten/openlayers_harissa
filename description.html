@@ -99,9 +99,9 @@ var findGetParameter=function(parameterName)
 
 function display_data(data)
 {
-	console.log(data);
+	
 	var table_body=$("#table_description").find("tbody");
-	console.log(data["id"]);
+
 	table_body.append("<tr><td>id</td><td>"+data["id"]+"</td></tr>");
 	table_body.append("<tr><td>type</td><td>"+data["type"]+"</td></tr>");
 	table_body.append("<tr><td>date</td><td>"+data["date"]+"</td></tr>");
@@ -134,13 +134,25 @@ function display_alea(p_id)
 						  'CQL_FILTER=id%3D'+p_id 
 						;
 	
-	$.getJSON( tmp_url, function( data ) {
+	$.getJSON( tmp_url, 
+		function( data ) 
+		{
+		    
 			features=new ol.format.GeoJSON().readFeatures(data);
+			
 			 display_data(data.features[0]["properties"]);
 			var center=features[0].getGeometry().getCoordinates();
+			console.log(center);
 			 vectorSource = new ol.source.Vector({
 				features:features,
 			});
+			var col_def='#3399CC';
+			var type_geo_ref=features[0].get("type_georef");
+			if(type_geo_ref!='no_coords')
+			{
+				col_def='#339900';
+			}
+			
 			displayed_layer = new ol.layer.Vector({		  
 			   source: vectorSource,		   
 			   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
@@ -151,7 +163,7 @@ function display_alea(p_id)
 						color: '#fff',
 					  }),
 					  fill: new ol.style.Fill({
-						color: '#3399CC',
+						color: col_def,
 					  }),
 					}),
 					text: new ol.style.Text({
