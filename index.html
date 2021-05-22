@@ -407,7 +407,7 @@ function init_wfs(cql_filter)
 				  source: vectorSource,
 				});
 				 var styleCache = {};
-				 
+				 var styleCache_coords = {};
 		  displayed_layer = new ol.layer.Vector({		  
 		   source: clusterSource,		   
 		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
@@ -415,19 +415,26 @@ function init_wfs(cql_filter)
 		    var data_zoom_level=feature_tmp.get('features');	
 		
 			var size = feature_tmp.get('features').length;	
-				
-					var style = styleCache[size];
-					if (!style) {
-					  
-					  var col_def='#3399CC';
-					  for(var i=0; i<size;i++)
-					  {
+				    var col_def='#3399CC';					
+					var style=null;				  
+					for(var i=0; i<size;i++)
+					{
 						var type_geo_ref=data_zoom_level[i].get("type_georef");
 						if(type_geo_ref!='no_coords')
 						{
 						 col_def='#339900';
 						}
-					  }
+					}
+					if(col_def=='#3399CC')
+					{
+						style=styleCache[size];
+					}
+					else if(col_def=='#339900')
+					{
+						style=styleCache_coords[size] ;
+					}
+					if (!style) 
+					{	 
 					  
 					  style = new ol.style.Style({
 						image: new ol.style.Circle({
@@ -446,7 +453,14 @@ function init_wfs(cql_filter)
 						  }),
 						}),
 					  });
-					  styleCache[size] = style;
+					  if(col_def=='#3399CC')
+					  {
+						styleCache[size] = style;
+					  }
+					  else if(col_def=='#339900')
+					  {
+						styleCache_coords[size] = style;
+					  }
 					}
 					return style;
 				  }
