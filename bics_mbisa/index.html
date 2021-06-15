@@ -1,0 +1,554 @@
+<meta charset="UTF-8">
+<html>
+
+<head>
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<link rel="stylesheet" href="./js/bootstrap-5.0.0-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="./js/openlayers/v6.5.0-dist/ol.css">
+<link rel="stylesheet" href="./js/bootstrap-datepicker-master/dist/css/bootstrap-datepicker.standalone.css">
+<link rel="stylesheet" href="./js/select2/dist/css/select2.min.css">
+<script src="./js/jquery/jquery-min-3.6.0.js"></script>
+<script src="./js/bootstrap-5.0.0-dist/js/bootstrap.min.js"></script>
+<script src="./js/openlayers/v6.5.0-dist/ol.js"></script>
+<script src="./js/bootstrap-datepicker-master/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="./js/select2/dist/js/select2.full.min.js"></script>
+</head>
+
+  <style>
+        #drop-area {
+            border: 1px solid blue;
+            padding: 15px;
+            margin-top:5px;
+        }
+		
+		    p.collapse{
+         display:none;
+      }
+      
+      .ol-popup {
+        position: absolute;
+        background-color: white;
+		color:blue;
+        -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 380px;
+		max-height: 600px;
+		overflow-y:scroll;
+      }
+      .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+      }
+      .ol-popup-closer:after {
+        content: "✖";
+      }
+      
+
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="row">
+		<div class="com-sm-12">
+			<div id="map" style="width:100%; height:800px;">
+			</div>
+		
+		<div id="mouse-position"></div>
+		<div id="popup" class="ol-popup">
+			  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+			  <div id="popup-content"></div>
+		 </div>
+        <div>	
+		Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="Bing" selected="selected">Bing satellite</option>
+					 </select>
+		</div>
+		</div>
+	</div>
+</div>
+<h3>FileReader example</h3>
+    <a href="">Reset</a>
+ 
+    <div id="drop-area" ondragover="dragoverHandler(event)" ondrop="dropHandler(event)">
+        Drop one file here
+    </div>
+ 
+    <output id="log-div"></output>
+	<div>
+		<input type="button" id="load_json" name="load_json" value='LOAD LAYER'/>
+	</div>
+<script language="javascript">
+//map
+var map;
+var osm_background;
+var bing_background;
+var mousePositionControl;
+var scaleline;
+var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
+var global_user_json=null;
+var layer_json=Array();
+var layer_json_ol=Array();
+var overlay;
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+var closer = document.getElementById('popup-closer');
+var root_darwin_wfs="https://edit.africamuseum.be/geoserver/mbisa_bics/wfs?";
+var root_darwin_wms="https://edit.africamuseum.be/geoserver/mbisa_bics/wms?"
+var darwin_wfs_layer="mbisa_bics:ttv_rdf_view_2_ichtyo"
+var darwin_layer=null;
+var gbif_fishbase_key="197908d0-5565-11d8-b290-b8a03c50a862";
+
+//var test_regex="POLYGON(453223.444 783333.12, 456233.123 9625.423, 6985.45 4663.75)";
+
+
+
+
+var switch_coordinate_logic=function(val)
+{
+    //console.log(val)
+    var re_coord_reverse=/(\d|\.)+/g;
+    var switch_coordinates=function(param)
+	{
+		var coord_reverse=Array();
+		
+		var returned=Array();
+		for(var i=0; i< param.length;i++)
+		{
+			var tmp=param[i];
+			var tmp2=null;
+			////console.log(tmp);
+			
+			if(i+1<param.length)
+			{
+				tmp2=param[i+1];
+				i=i+1;
+			}
+			returned.push(tmp2);
+			returned.push(tmp);
+			
+		}
+		//console.log(returned);
+		return returned;
+	}
+	var found= val.match(re_coord_reverse);
+	//console.log(found);
+	var replaced= val.replace(re_coord_reverse, '_COORD_');
+	//console.log(replaced);
+	var reversed=switch_coordinates(found);
+	//var replaced_final="";
+	//console.log(reversed);
+	for(var i=0; i< reversed.length;i++)
+	{
+		replaced=replaced.replace("_COORD_",reversed[i]);
+	}
+	//console.log(replaced)
+	return replaced;
+
+}
+
+var isJson=function(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
+var get_wkt=function(feature)
+{
+    var reader=new ol.format.GeoJSON();
+	var reversed=reader.readFeature(switch_coordinate_logic(reader.writeFeature(feature)));
+	//console.log("REVERSED=");
+	//console.log(switch_coordinate_logic(reader.writeFeature(feature)));
+    //console.log(reversed);
+	var format = new ol.format.WKT();
+	/*var wktRepresentation  = format.writeGeometry(feature.getGeometry().transform('EPSG:3857', 'EPSG:4326'));
+	var extentWMS=feature.getGeometry().getExtent();
+	console.log(extentWMS);
+	//console.log(wktRepresentation);*/
+ //return wktRepresentation;
+    return feature.getGeometry().transform('EPSG:3857', 'EPSG:4326');
+}
+
+var query_darwin=function(feature)
+{
+
+	//var wkt=get_wkt(feature);
+	var obj_feat=get_wkt(feature);
+	var extentWMS=obj_feat.getExtent();
+	console.log(extentWMS);
+	console.log(extentWMS.join(","));
+	var format = new ol.format.WKT();
+	var wkt=format.writeGeometry(obj_feat);
+	//console.log(wkt);
+	var current_bbox=ol.proj.transformExtent(map.getView().calculateExtent(map.getSize()), "EPSG:3857", "EPSG:4326");
+	console.log(current_bbox);
+	var source_wms=new ol.source.ImageWMS({
+      url: root_darwin_wms,
+      params: {'LAYERS': darwin_wfs_layer  ,
+				'CQL_FILTER':"INTERSECTS(geom,"+wkt+ ")",
+				//'bbox':extentWMS.join(",")
+				},
+      serverType: 'geoserver',
+      // Countries have transparency, so do not fade tiles:
+	  imageLoadFunction: function (image, src) {
+        var img = image.getImage();
+		console.log("LOAD");
+		console.log(src);
+        if (typeof window.btoa === 'function') {
+		console.log("LOAD_1");
+          var urlArray = src.split("?");
+          var url = urlArray[0];
+          var params = urlArray[1];
+
+          var xhr = new XMLHttpRequest();
+          xhr.onload = function (e) {
+            if (this.status === 200) {
+			console.log("RUN");
+              var uInt8Array = new Uint8Array(this.response);
+              var i = uInt8Array.length;
+              var binaryString = new Array(i);
+              while (i--) {
+                binaryString[i] = String.fromCharCode(uInt8Array[i]);
+              }
+              var data = binaryString.join('');
+              var type = xhr.getResponseHeader('content-type');
+              if (type.indexOf('image') === 0) {
+                img.src = 'data:' + type + ';base64,' + window.btoa(data);
+              }
+            }
+			else
+			{
+			console.log("OUTPUT");
+			}
+          };
+          xhr.open('POST', url, true);
+          xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          xhr.responseType = 'arraybuffer';
+          xhr.send(params);
+        } else {
+		console.log("LOAD_2");
+          img.src = src;
+        }
+		console.log("LOAD_3");
+	},
+      transition: 0,
+	  }
+	);
+	var local_wms=new ol.layer.Image(
+		{source:source_wms}
+	);
+	map.addLayer(local_wms);
+    var bbox=extentWMS[2]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[1];
+    test_gbif_wkt('POLYGON(('+bbox+'))');
+   
+}
+
+var test_gbif_density=function()
+{
+    var url_gbif="https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3857&bin=hex&hexPerTile=30&style=classic-noborder.poly&dataset_key="+gbif_fishbase_key;
+    var xyz_layer=new ol.source.XYZ(
+        {
+            url:url_gbif
+        }
+    );
+    var gbif_layer=new ol.layer.Tile(
+        {
+            source: xyz_layer
+        }
+    );
+    map.addLayer(gbif_layer);
+}
+
+var test_gbif_wkt=function(wkt)
+{
+    var url_gbif="https://api.gbif.org/v1/occurrence/search";
+    
+    
+    var post_data={
+        'datasetKey':gbif_fishbase_key,
+        'geometry': wkt,
+        'limit':300
+    }
+    jQuery.get(url_gbif, post_data, function(data)
+                                    {
+                                        console.log(data);
+                                    }, "json");
+}
+
+var add_json_to_map=function(geoJSON)
+{
+    //var tmp=jQuery.parseJSON(geoJSON);
+	tmp=geoJSON;
+	
+	//tmp=tmp["features"];
+	//console.log(tmp);
+	var tmpFeatures=(new ol.format.GeoJSON()).readFeatures(tmp, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+	//console.log(tmpFeatures);		
+    var vectorSource = new ol.source.Vector({features: tmpFeatures});
+	if(tmpFeatures.length>0)
+    {	
+	    //console.log("GO");
+		var vectorLayer = new ol.layer.Vector({
+				source: vectorSource,
+				style: new ol.style.Style({
+				stroke: new ol.style.Stroke({
+				color: 'blue',
+				lineDash: [4],
+				width: 3,
+			}),
+			fill: new ol.style.Fill({
+			  color: 'rgba(0, 0, 255, 0.1)',
+			}),
+		  }),
+		});
+		
+		map.addLayer(vectorLayer);
+		layer_json_ol.push(layer_json_ol);
+		var extent = vectorSource.getExtent();
+		map.getView().fit(extent, map.getSize());
+	}
+}
+
+
+$("#load_json").click(
+	function()
+	{
+		//console.log("click");
+		//console.log(global_user_json);
+		var is_json=isJson(global_user_json)
+		//console.log(is_json);
+		if(is_json)
+		{
+			layer_json.push(global_user_json);
+			add_json_to_map(global_user_json);
+		}
+		else
+		{
+			global_user_json=null;
+		}
+	}
+);
+
+	
+ var init_overlay=function()
+ {
+	 
+	overlay = new ol.Overlay(/** @type {olx.OverlayOptions} */ ({
+               element: container,
+                    autoPan: true,
+                    autoPanAnimation: {
+                      duration: 250
+                    }
+                  }));
+                  
+
+     closer.onclick = function() {
+                    overlay.setPosition(undefined);
+                    closer.blur();
+                    return false;
+                  };
+     map.addOverlay(overlay);
+ } 
+ 
+function init_map()
+{
+	osm_background=new ol.layer.Tile(
+			{
+			source: new ol.source.OSM(),
+			visible: false,
+			
+			}
+		);
+	bing_background=new ol.layer.Tile(
+			{
+			visible: true,
+			source: new ol.source.BingMaps(
+				{
+					key:bing_key,
+					imagerySet: 'AerialWithLabelsOnDemand'
+				}
+			)
+			}
+		);
+	//position mouse
+	 mousePositionControl = new ol.control.MousePosition({
+	  
+	  projection: 'EPSG:4326',
+	  // comment the following two lines to have the mouse position
+	  // be placed within the map.
+	  className: 'custom-mouse-position',
+	  target: document.getElementById('mouse-position'),
+	  undefinedHTML: '&nbsp;',
+	});
+	
+	//barre échelle
+	 scaleline =new ol.control.ScaleLine({
+      //units: unitsSelect.value,
+    });
+	
+
+
+
+
+	map=new ol.Map(
+	{
+		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
+		  target:"map", 
+          layers: [bing_background, osm_background],
+		   view: new ol.View(
+		   { 
+				//projection: 'EPSG:4326',
+				center: [29.5,-2],
+				zoom: 7
+			})			
+	});
+	
+	init_overlay();
+	
+	map.on('click', function(evt) {
+				var coordinate = evt.coordinate;
+				var hdms = ol.coordinate.toStringHDMS(coordinate);
+				////console.log("click");
+				var feature = map.forEachFeatureAtPixel(evt.pixel, 
+							  function(feature) { return feature; });
+				//console.log("CLICKED_FEATURE");
+				//console.log(feature);
+				//console.log("CLICKED_PROPS");
+				//console.log(feature.getProperties());
+				props=feature.getProperties();
+				//var popup = new ol.Overlay.Popup();
+				//map.addOverlay(popup);
+			    //console.log(Object.keys(props));
+				var keys=Object.keys(props);
+				html_array=Array();
+				for(var i=0; i<keys.length;i++)
+				{
+					var key=keys[i];
+					if(key!='geometry')
+					{
+						var val=props[key];
+						html_array.push(key+" : " +val);
+					}
+				}
+				var html=html_array.join("<br/>");
+				content.innerHTML = '<p>' + html +'</p>';
+				overlay.setPosition(coordinate);
+			    query_darwin(feature);
+                test_gbif_density();
+				 
+			  
+			});	
+	
+	
+	
+
+
+}
+init_map();
+
+//js
+function dropHandler(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+ 
+    // FileList object.
+    var files = evt.dataTransfer.files;
+ 
+    if (files.length != 1) {
+        resetLog();
+        appendLog("Please drag and drop 1 file!");
+        return;
+    }
+    var file = files[0];
+ 
+    var fileReader = new FileReader();
+ 
+    fileReader.onloadstart = function(progressEvent) {
+        resetLog();
+        appendLog("onloadstart!");
+        var msg = "File Name: " + file.name + "<br>" +
+            "File Size: " + file.size + "<br>" +
+            "File Type: " + file.type;
+ 
+        appendLog(msg);
+    }
+ 
+    fileReader.onload = function(progressEvent) {
+        appendLog("onload!");
+ 
+        var stringData = fileReader.result;
+        appendLog(" ---------------- File Content ----------------: ");
+        //appendLog(stringData);
+		global_user_json=stringData;
+    }
+ 
+    fileReader.onloadend = function(progressEvent) {
+        appendLog("onloadend!");
+        // FileReader.EMPTY, FileReader.LOADING, FileReader.DONE
+        appendLog("readyState = " + fileReader.readyState);
+    }
+ 
+    fileReader.onerror = function(progressEvent) {
+        appendLog("onerror!");
+        appendLog("Has Error!");
+    }
+ 
+    // Read file asynchronously.
+    fileReader.readAsText(file, "UTF-8"); // fileReader.result -> String.
+}
+ 
+function dragoverHandler(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    // Explicitly show this is a copy.
+    evt.dataTransfer.dropEffect = 'copy';
+}
+ 
+function resetLog() {
+    document.getElementById('log-div').innerHTML = "";
+}
+ 
+function appendLog(msg) {
+    document.getElementById('log-div').innerHTML += "<br>" + msg;
+}
+</script>
+</body>
+</html>
