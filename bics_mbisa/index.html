@@ -107,8 +107,11 @@
     </div>
  
     <output id="log-div"></output>
+	<div id="log_feature"></div>
 	<div>
 		<input type="button" id="load_json" name="load_json" value='LOAD LAYER'/>
+		<input type="button" id="load_darwin" name="load_darwin" value='LOAD DARWIN'/>
+		<input type="button" id="load_fishbase" name="load_fishbase" value='LOAD FISHBASE (GBIF)'/>
 	</div>
 <script language="javascript">
 //map
@@ -120,7 +123,8 @@ var scaleline;
 var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
 var global_user_json=null;
 var layer_json=Array();
-var layer_json_ol=Array();
+var uploaded_layer;
+
 var overlay;
 var container = document.getElementById('popup');
 var content = document.getElementById('popup-content');
@@ -130,54 +134,18 @@ var root_darwin_wms="https://edit.africamuseum.be/geoserver/mbisa_bics/wms?"
 var darwin_wfs_layer="mbisa_bics:ttv_rdf_view_2_ichtyo"
 var darwin_layer=null;
 var gbif_fishbase_key="197908d0-5565-11d8-b290-b8a03c50a862";
-
-//var test_regex="POLYGON(453223.444 783333.12, 456233.123 9625.423, 6985.45 4663.75)";
-
-
-
-
-var switch_coordinate_logic=function(val)
-{
-    //console.log(val)
-    var re_coord_reverse=/(\d|\.)+/g;
-    var switch_coordinates=function(param)
-	{
-		var coord_reverse=Array();
-		
-		var returned=Array();
-		for(var i=0; i< param.length;i++)
-		{
-			var tmp=param[i];
-			var tmp2=null;
-			////console.log(tmp);
-			
-			if(i+1<param.length)
-			{
-				tmp2=param[i+1];
-				i=i+1;
-			}
-			returned.push(tmp2);
-			returned.push(tmp);
-			
-		}
-		//console.log(returned);
-		return returned;
-	}
-	var found= val.match(re_coord_reverse);
-	//console.log(found);
-	var replaced= val.replace(re_coord_reverse, '_COORD_');
-	//console.log(replaced);
-	var reversed=switch_coordinates(found);
-	//var replaced_final="";
-	//console.log(reversed);
-	for(var i=0; i< reversed.length;i++)
-	{
-		replaced=replaced.replace("_COORD_",reversed[i]);
-	}
-	//console.log(replaced)
-	return replaced;
-
-}
+var selected_feature=null;
+var size_batch=500;
+var size_batch_gbif=300;
+var max_wfs_iterations=20;
+var amount_returned=0;
+var darwin_data={};
+var darwin_root_url="https://darwinweb.africamuseum.be/page_specimen/";
+var url_gbif="https://api.gbif.org/v1/occurrence/search";
+var gbif_data={};
+var displayed_layer;
+var fishbase_layer;
+var url_site_gbif="https://www.gbif.org/occurrence/";
 
 var isJson=function(str) {
     try {
@@ -191,142 +159,309 @@ var isJson=function(str) {
 var get_wkt=function(feature)
 {
     var reader=new ol.format.GeoJSON();
-	var reversed=reader.readFeature(switch_coordinate_logic(reader.writeFeature(feature)));
-	//console.log("REVERSED=");
-	//console.log(switch_coordinate_logic(reader.writeFeature(feature)));
-    //console.log(reversed);
+
+
 	var format = new ol.format.WKT();
-	/*var wktRepresentation  = format.writeGeometry(feature.getGeometry().transform('EPSG:3857', 'EPSG:4326'));
-	var extentWMS=feature.getGeometry().getExtent();
-	console.log(extentWMS);
-	//console.log(wktRepresentation);*/
- //return wktRepresentation;
-    return feature.getGeometry().transform('EPSG:3857', 'EPSG:4326');
+    //it not clone the original layer is lost
+    return feature.clone().getGeometry().transform('EPSG:3857', 'EPSG:4326');
 }
 
 var query_darwin=function(feature)
 {
-
+	overlay.setPosition(undefined);
 	//var wkt=get_wkt(feature);
 	var obj_feat=get_wkt(feature);
-	var extentWMS=obj_feat.getExtent();
-	console.log(extentWMS);
-	console.log(extentWMS.join(","));
+	
+	//console.log(extentWMS);
+	//console.log(extentWMS.join(","));
 	var format = new ol.format.WKT();
 	var wkt=format.writeGeometry(obj_feat);
 	//console.log(wkt);
-	var current_bbox=ol.proj.transformExtent(map.getView().calculateExtent(map.getSize()), "EPSG:3857", "EPSG:4326");
-	console.log(current_bbox);
-	var source_wms=new ol.source.ImageWMS({
-      url: root_darwin_wms,
-      params: {'LAYERS': darwin_wfs_layer  ,
-				'CQL_FILTER':"INTERSECTS(geom,"+wkt+ ")",
-				//'bbox':extentWMS.join(",")
-				},
-      serverType: 'geoserver',
-      // Countries have transparency, so do not fade tiles:
-	  imageLoadFunction: function (image, src) {
-        var img = image.getImage();
-		console.log("LOAD");
-		console.log(src);
-        if (typeof window.btoa === 'function') {
-		console.log("LOAD_1");
-          var urlArray = src.split("?");
-          var url = urlArray[0];
-          var params = urlArray[1];
 
-          var xhr = new XMLHttpRequest();
-          xhr.onload = function (e) {
-            if (this.status === 200) {
-			console.log("RUN");
-              var uInt8Array = new Uint8Array(this.response);
-              var i = uInt8Array.length;
-              var binaryString = new Array(i);
-              while (i--) {
-                binaryString[i] = String.fromCharCode(uInt8Array[i]);
-              }
-              var data = binaryString.join('');
-              var type = xhr.getResponseHeader('content-type');
-              if (type.indexOf('image') === 0) {
-                img.src = 'data:' + type + ';base64,' + window.btoa(data);
-              }
-            }
-			else
-			{
-			console.log("OUTPUT");
-			}
-          };
-          xhr.open('POST', url, true);
-          xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-          xhr.responseType = 'arraybuffer';
-          xhr.send(params);
-        } else {
-		console.log("LOAD_2");
-          img.src = src;
-        }
-		console.log("LOAD_3");
-	},
-      transition: 0,
-	  }
-	);
-	var local_wms=new ol.layer.Image(
-		{source:source_wms}
-	);
-	map.addLayer(local_wms);
-    var bbox=extentWMS[2]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[1];
-    test_gbif_wkt('POLYGON(('+bbox+'))');
+
+   darwin_data["features"]=Array();
+   go_darwin(wkt, 0, max_wfs_iterations, size_batch);
    
 }
 
-var test_gbif_density=function()
+
+
+var go_darwin=function(wkt, page, max_iteration, size)
 {
-    var url_gbif="https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3857&bin=hex&hexPerTile=30&style=classic-noborder.poly&dataset_key="+gbif_fishbase_key;
-    var xyz_layer=new ol.source.XYZ(
-        {
-            url:url_gbif
-        }
-    );
-    var gbif_layer=new ol.layer.Tile(
-        {
-            source: xyz_layer
-        }
-    );
-    map.addLayer(gbif_layer);
+	var offset=page*size;
+	var post_data={"version":"1.0.0",
+					"request":"GetFeature",
+					"typename":darwin_wfs_layer,
+					"outputFormat":"application/json",
+					"srsname":"EPSG:3857",
+					"CQL_FILTER":"INTERSECTS(geom,"+wkt+ ")",
+					"maxFeatures":size,
+					"startIndex":offset,
+					"sortBy":"id"};
+   
+    jQuery.post( root_darwin_wfs , post_data  , 
+		function(data)
+		{                                                                                                            	
+			//console.log("data");
+            //console.log(data);
+			var nb_returned=data["totalFeatures"];
+			//console.log(nb_returned);
+			amount_returned=amount_returned+data["numberReturned"];
+			//console.log(amount_returned);
+			for(var i=0; i<data["features"].length;i++)
+			{
+				data["features"][i]["properties"]["data_provider"]="darwin";
+			}
+			darwin_data["features"]=darwin_data["features"].concat(data["features"]);
+			darwin_data["type"]=data["type"];
+			darwin_data["crs"]=data["crs"];
+			darwin_data["timeStamp"]=data["timeStamp"];
+			darwin_data["totalFeatures"]=amount_returned;
+			darwin_data["numberMatched"]=amount_returned;
+			darwin_data["numberReturned"]=amount_returned;
+			if(amount_returned<nb_returned && page<max_iteration)
+			{
+				//console.log("page");
+				 go_darwin(wkt, page+1, max_iteration, size_batch);
+			}
+			else //last
+			{
+			    //console.log(darwin_data["features"].length);
+				//console.log(darwin_data);
+				var vectorSource = new ol.source.Vector({
+					features: new ol.format.GeoJSON().readFeatures(darwin_data)
+				});
+				var clusterSource = new ol.source.Cluster({
+				  distance: 40,
+				  source: vectorSource,
+				});
+				 var styleCache = {};
+				 
+				  displayed_layer = new ol.layer.Vector({		  
+				   source: clusterSource,		   
+				   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+				  style: function (feature_tmp) {		  
+					var data_zoom_level=feature_tmp.get('features');
+					////console.log("test1");            
+					////console.log(data_zoom_level);
+					////console.log("test2"); 
+					var size = feature_tmp.get('features').length;	
+							var col_def='#3399CC';					
+							var style=null;				  
+							style=styleCache[size];
+							if (!style) 
+							{	 
+							  
+							  style = new ol.style.Style({
+								image: new ol.style.Circle({
+								  radius: 15,
+								  stroke: new ol.style.Stroke({
+									color: '#fff',
+								  }),
+								  fill: new ol.style.Fill({
+									color: col_def,
+								  }),
+								}),
+								text: new ol.style.Text({
+								  text: size.toString(),
+								  fill: new ol.style.Fill({
+									color: '#fff',
+								  }),
+								}),
+							  });
+							  styleCache[size] = style;
+							  
+							}
+							return style;
+						  }
+						  
+						});
+					
+				map.addLayer(displayed_layer);
+				darwin_data={};
+			}
+			
+        }, "json"  );
 }
 
-var test_gbif_wkt=function(wkt)
+
+
+var query_fishbase=function(feature)
+{ 
+  overlay.setPosition(undefined);
+   var obj_feat=get_wkt(feature);
+   var extentWMS=obj_feat.getExtent();
+   var bbox=extentWMS[2]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[1]+","+extentWMS[0]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[3]+","+extentWMS[2]+" "+extentWMS[1];
+   var wkt='POLYGON(('+bbox+'))';
+   gbif_data['results']=Array();
+   go_fishbase(wkt,0,max_wfs_iterations, obj_feat.transform("EPSG:4326", "EPSG:3857") )
+}
+
+var test_is_in_wkt=function(elem, geom)
 {
-    var url_gbif="https://api.gbif.org/v1/occurrence/search";
-    
-    
-    var post_data={
+	var lat=elem['decimalLatitude'];
+	var longi=elem['decimalLongitude'];
+	var point=new ol.proj.fromLonLat([longi,lat]);
+	return geom.intersectsCoordinate(point);
+	
+}
+
+var check_features=function(results, geom)
+{
+	var returned=Array();
+	//console.log(results.length);
+	for(var i=0;i<results.length;i++)
+	{
+		flag=test_is_in_wkt(results[i], geom);
+		if(flag)
+		{
+			returned.push(results[i]);
+		}
+	}
+	return returned;
+}
+
+var gbif_to_geojson=function(gbif_json)
+{
+    var tms=new Date()
+	var gbif_geo_json={};
+	gbif_geo_json["type"]="FeatureCollection";
+	gbif_geo_json["totalFeatures"]=gbif_data['results'].length;
+	gbif_geo_json["numberMatched"]=gbif_data['results'].length;
+	gbif_geo_json["numberReturned"]=gbif_data['results'].length;	
+	gbif_geo_json["timeStamp"]=tms.toISOString();
+	gbif_geo_json["crs"]={}
+	gbif_geo_json["crs"]["type"]="name";
+	gbif_geo_json["crs"]["properties"]={};
+	gbif_geo_json["crs"]["properties"]["name"]="urn:ogc:def:crs:EPSG::3857";
+	gbif_geo_json["features"]=Array();
+	for(var i=0; i<gbif_json["results"].length;i++)
+	{
+		var tmp=gbif_json["results"][i];
+		var tmp_feat={};
+		tmp_feat["type"]="Feature";
+		tmp_feat["id"]=tmp["key"];
+		tmp_feat["geometry"]={};
+		tmp_feat["geometry"]["type"]="Point";
+		tmp_feat["geometry"]["coordinates"]=new ol.proj.fromLonLat([tmp["decimalLongitude"], tmp["decimalLatitude"]]);
+		tmp_feat["geometry"]["geometry_name"]="geom";
+		tmp_feat["properties"]={};
+		tmp_feat["properties"]["id"]=tmp["key"];
+		tmp_feat["properties"]["data_provider"]="gbif";
+		tmp_feat["properties"]["scientificName"]=tmp["scientificName"];
+		tmp_feat["properties"]["decimalLongitude"]=tmp["decimalLongitude"];
+		tmp_feat["properties"]["decimalLatitude"]=tmp["decimalLatitude"];
+		tmp_feat["properties"]["year"]=tmp["year"];
+		tmp_feat["properties"]["identifier"]=tmp["identifier"];
+		tmp_feat["properties"]["catalogNumber"]=tmp["catalogNumber"];
+		//console.log(tmp_feat);
+		gbif_geo_json["features"].push(tmp_feat);
+		
+	}
+	return gbif_geo_json;
+}
+var go_fishbase=function(wkt, page, max_iteration, geom)
+{
+	 var offset=page*size_batch_gbif;
+	  var post_data={
         'datasetKey':gbif_fishbase_key,
         'geometry': wkt,
-        'limit':300
+        'limit':size_batch_gbif,
+		'offset': offset
     }
-    jQuery.get(url_gbif, post_data, function(data)
-                                    {
-                                        console.log(data);
-                                    }, "json");
+    jQuery.get(url_gbif, post_data, 
+		function(data)
+        {
+		     //console.log(data);
+			var nb_returned=data["count"];
+			amount_returned=amount_returned+data["limit"];
+			var list_elems=check_features(data['results'], geom);
+			gbif_data['results']=gbif_data['results'].concat(list_elems);
+            gbif_data['count']=gbif_data['results'].length;
+			if(amount_returned<nb_returned && page<max_iteration)
+			{
+				//console.log("page");
+				go_fishbase(wkt, page+1, max_iteration, geom);
+			}
+			else //last
+			{
+				//console.log(gbif_data);
+				var tmp_json=gbif_to_geojson(gbif_data);
+				//console.log(tmp_json);
+				var vectorSource = new ol.source.Vector({
+					features: new ol.format.GeoJSON().readFeatures(tmp_json)
+				});
+				var clusterSource = new ol.source.Cluster({
+				  distance: 40,
+				  source: vectorSource,
+				});
+				 var styleCache = {};
+				 
+				  fishbase_layer = new ol.layer.Vector({		  
+				   source: clusterSource,		   
+				   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+				  style: function (feature_tmp) {		  
+					var data_zoom_level=feature_tmp.get('features');
+					////console.log("test1");            
+					////console.log(data_zoom_level);
+					////console.log("test2"); 
+					var size = feature_tmp.get('features').length;	
+							var col_def='#339900';					
+							var style=null;				  
+							style=styleCache[size];
+							if (!style) 
+							{	 
+							  
+							  style = new ol.style.Style({
+								image: new ol.style.Circle({
+								  radius: 15,
+								  stroke: new ol.style.Stroke({
+									color: '#fff',
+								  }),
+								  fill: new ol.style.Fill({
+									color: col_def,
+								  }),
+								}),
+								text: new ol.style.Text({
+								  text: size.toString(),
+								  fill: new ol.style.Fill({
+									color: '#fff',
+								  }),
+								}),
+							  });
+							  styleCache[size] = style;
+							  
+							}
+							return style;
+						  }
+						  
+						});
+					
+				map.addLayer(fishbase_layer);
+				gbif_data={};
+				
+			}			
+        }, "json");
 }
 
 var add_json_to_map=function(geoJSON)
 {
+	uploaded_layer=null;
     //var tmp=jQuery.parseJSON(geoJSON);
 	tmp=geoJSON;
 	
 	//tmp=tmp["features"];
-	//console.log(tmp);
+	////console.log(tmp);
 	var tmpFeatures=(new ol.format.GeoJSON()).readFeatures(tmp, {
                 dataProjection: 'EPSG:4326',
                 featureProjection: 'EPSG:3857'
             });
-	//console.log(tmpFeatures);		
+	////console.log(tmpFeatures);		
     var vectorSource = new ol.source.Vector({features: tmpFeatures});
 	if(tmpFeatures.length>0)
     {	
-	    //console.log("GO");
-		var vectorLayer = new ol.layer.Vector({
+	    ////console.log("GO");
+		 uploaded_layer = new ol.layer.Vector({
 				source: vectorSource,
 				style: new ol.style.Style({
 				stroke: new ol.style.Stroke({
@@ -340,10 +475,10 @@ var add_json_to_map=function(geoJSON)
 		  }),
 		});
 		
-		map.addLayer(vectorLayer);
-		layer_json_ol.push(layer_json_ol);
-		var extent = vectorSource.getExtent();
-		map.getView().fit(extent, map.getSize());
+		map.addLayer(uploaded_layer);
+		//layer_json_ol.push(layer_json_ol);
+		//var extent = uploaded_layer.getExtent();
+		//map.getView().fit(extent, map.getSize());
 	}
 }
 
@@ -351,10 +486,10 @@ var add_json_to_map=function(geoJSON)
 $("#load_json").click(
 	function()
 	{
-		//console.log("click");
-		//console.log(global_user_json);
+		////console.log("click");
+		////console.log(global_user_json);
 		var is_json=isJson(global_user_json)
-		//console.log(is_json);
+		////console.log(is_json);
 		if(is_json)
 		{
 			layer_json.push(global_user_json);
@@ -367,7 +502,37 @@ $("#load_json").click(
 	}
 );
 
-	
+$("#load_darwin").click(
+	function()
+	{
+		if(selected_feature!==null)
+		{
+		    amount_returned=0;
+			darwin_data={};
+			query_darwin(selected_feature);
+		}
+	}
+	);
+
+$("#load_fishbase").click(
+	function()
+	{
+		if(selected_feature!==null)
+		{
+			amount_returned=0;
+			gbif_data={}
+			query_fishbase(selected_feature);
+		}
+	}
+	);
+
+function isCluster(feature) {
+      if (!feature || !feature.get('features')) { 
+            return false; 
+      }
+      return feature.get('features').length >= 1;
+    }
+  	
  var init_overlay=function()
  {
 	 
@@ -436,7 +601,7 @@ function init_map()
 		   view: new ol.View(
 		   { 
 				//projection: 'EPSG:4326',
-				center: [29.5,-2],
+				center: new ol.proj.fromLonLat([29.5,-2]),
 				zoom: 7
 			})			
 	});
@@ -446,41 +611,71 @@ function init_map()
 	map.on('click', function(evt) {
 				var coordinate = evt.coordinate;
 				var hdms = ol.coordinate.toStringHDMS(coordinate);
-				////console.log("click");
+				//////console.log("click");
 				var feature = map.forEachFeatureAtPixel(evt.pixel, 
 							  function(feature) { return feature; });
-				//console.log("CLICKED_FEATURE");
-				//console.log(feature);
-				//console.log("CLICKED_PROPS");
-				//console.log(feature.getProperties());
-				props=feature.getProperties();
-				//var popup = new ol.Overlay.Popup();
-				//map.addOverlay(popup);
-			    //console.log(Object.keys(props));
-				var keys=Object.keys(props);
-				html_array=Array();
-				for(var i=0; i<keys.length;i++)
+				
+				if(isCluster(feature))
 				{
-					var key=keys[i];
-					if(key!='geometry')
-					{
-						var val=props[key];
-						html_array.push(key+" : " +val);
+				    //console.log(feature);
+					 var html="";
+					// is a cluster, so loop through all the underlying features
+					var features_tmp = feature.get('features');
+					//console.log(features_tmp);
+					var key_sort=[]
+					var feature_bag={};
+					for(var i = 0; i < features_tmp.length; i++) {
+						key_sort[key_sort.length] = features_tmp[i].get('id');
+						feature_bag[features_tmp[i].get('id')]=features_tmp[i];
 					}
+					//console.log(key_sort);
+					//console.log(feature_bag);
+					//key_sort.sort();
+					var html_array=Array();
+					for(var i = 0; i < key_sort.length; i++) 
+					{
+					  // here you'll have access to your normal attributes:
+					  //////console.log(features[i].get('name'));
+					 var tmp_feat=feature_bag[key_sort[i]];
+					 //console.log(tmp_feat);
+					 //console.log(tmp_feat.get('code_display'));
+					 if(tmp_feat.get('data_provider')=="darwin")
+					 {
+						html_array.push("<a target='_blank' href='"+darwin_root_url +( tmp_feat.get('uuid')||'') +"' ><u>"+ (tmp_feat.get('code_display')||'') +" "+ (tmp_feat.get('taxon_name')||'') +" "+ (tmp_feat.get('gtu_from_date')||'')  + "</u></a>");
+					  }
+					  else if(tmp_feat.get('data_provider')=="gbif")
+					  {
+						html_array.push("<a target='_blank' href='"+url_site_gbif +( tmp_feat.get('id')||'') +"' ><u>"+ (tmp_feat.get('catalogNumber')||'') +" "+ (tmp_feat.get('scientificName')||'') +" "+ (tmp_feat.get('year')||'')  + "</u></a>");
+					  }
+					}
+					content.innerHTML = '<p>' + html_array.join("<br/>") +'</p>';
+					//console.log(content.innerHTML);
+					overlay.setPosition(coordinate);
 				}
-				var html=html_array.join("<br/>");
-				content.innerHTML = '<p>' + html +'</p>';
-				overlay.setPosition(coordinate);
-			    query_darwin(feature);
-                test_gbif_density();
-				 
+				else
+				{  
+					props=feature.getProperties();
+					var keys=Object.keys(props);
+					html_array=Array();
+					for(var i=0; i<keys.length;i++)
+					{
+						var key=keys[i];
+						if(key!='geometry')
+						{
+							var val=props[key];
+							html_array.push(key+" : " +val);
+						}
+					}
+					var html=html_array.join("<br/>");
+					content.innerHTML = '<p>' + html +'</p>';
+					overlay.setPosition(coordinate);
+					selected_feature=feature;
+					$("#log_feature").text("Item_selected");
+			    //query_darwin(feature);
+                //test_gbif_density();
+				}
 			  
 			});	
-	
-	
-	
-
-
 }
 init_map();
 
