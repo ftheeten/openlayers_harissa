@@ -112,6 +112,7 @@
 		<input type="button" id="load_json" name="load_json" value='LOAD LAYER'/>
 		<input type="button" id="load_darwin" name="load_darwin" value='LOAD DARWIN'/>
 		<input type="button" id="load_fishbase" name="load_fishbase" value='LOAD FISHBASE (GBIF)'/>
+        <input type="button" id="download_darwin" name="download_darwin" value='Download DARWIN'/>
 	</div>
 <script language="javascript">
 //map
@@ -131,7 +132,7 @@ var content = document.getElementById('popup-content');
 var closer = document.getElementById('popup-closer');
 var root_darwin_wfs="https://edit.africamuseum.be/geoserver/mbisa_bics/wfs?";
 var root_darwin_wms="https://edit.africamuseum.be/geoserver/mbisa_bics/wms?"
-var darwin_wfs_layer="mbisa_bics:ttv_rdf_view_2_ichtyo"
+var darwin_wfs_layer="mbisa_bics:tmvpk_rdf_view_2_ichtyo_taxo"
 var darwin_layer=null;
 var gbif_fishbase_key="197908d0-5565-11d8-b290-b8a03c50a862";
 var selected_feature=null;
@@ -146,7 +147,6 @@ var gbif_data={};
 var displayed_layer;
 var fishbase_layer;
 var url_site_gbif="https://www.gbif.org/occurrence/";
-
 var isJson=function(str) {
     try {
         JSON.parse(str);
@@ -166,7 +166,7 @@ var get_wkt=function(feature)
     return feature.clone().getGeometry().transform('EPSG:3857', 'EPSG:4326');
 }
 
-var query_darwin=function(feature)
+var query_darwin=function(feature, mode)
 {
 	overlay.setPosition(undefined);
 	//var wkt=get_wkt(feature);
@@ -180,8 +180,16 @@ var query_darwin=function(feature)
 
 
    darwin_data["features"]=Array();
-   go_darwin(wkt, 0, max_wfs_iterations, size_batch);
-   
+   if(mode=="csv")
+   {
+     console.log("CSV");
+        download_darwin(wkt);
+   }
+   else
+   {
+    go_darwin(wkt, 0, max_wfs_iterations, size_batch);
+
+   }
 }
 
 
@@ -284,7 +292,35 @@ var go_darwin=function(wkt, page, max_iteration, size)
         }, "json"  );
 }
 
+var download_darwin=function(wkt)
+{
 
+    console.log("Download");
+	var post_data={"version":"1.0.0",
+					"request":"GetFeature",
+					"typename":darwin_wfs_layer,
+					"outputFormat":"csv",
+					"srsname":"EPSG:3857",
+					"CQL_FILTER":"INTERSECTS(geom,"+wkt+ ")",					
+					"sortBy":"id"};
+   
+    jQuery.post( root_darwin_wfs , post_data  , 
+		function(data)
+		{     
+        console.log("DONE");
+        console.log(data);                                                                                          $('<a></a>')
+                .attr('id','downloadFile')
+                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
+                .attr('download','filename.csv')
+                .appendTo('body');
+
+            $('#downloadFile').ready(function() {
+                $('#downloadFile').get(0).click();
+            });       	
+			
+			
+        } );
+}
 
 var query_fishbase=function(feature)
 { 
@@ -509,7 +545,7 @@ $("#load_darwin").click(
 		{
 		    amount_returned=0;
 			darwin_data={};
-			query_darwin(selected_feature);
+			query_darwin(selected_feature, "image");
 		}
 	}
 	);
@@ -744,6 +780,20 @@ function resetLog() {
 function appendLog(msg) {
     document.getElementById('log-div').innerHTML += "<br>" + msg;
 }
+
+$("#download_darwin").click(
+    function()
+    {
+     
+            if(selected_feature!==null)
+            {
+                amount_returned=0;
+                darwin_data={};
+                query_darwin(selected_feature, "csv");
+            }
+        
+    }
+);
 </script>
 </body>
 </html>
