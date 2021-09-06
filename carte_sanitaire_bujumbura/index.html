@@ -1,0 +1,871 @@
+<meta charset="UTF-8">
+<html>
+
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<link rel="stylesheet" href="./js/bootstrap-5.0.0-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="./js/openlayers/v6.5.0-dist/ol.css">
+<link rel="stylesheet" href="./js/bootstrap-datepicker-master/dist/css/bootstrap-datepicker.standalone.css">
+<link rel="stylesheet" href="./js/select2/dist/css/select2.min.css">
+<script src="./js/jquery/jquery-min-3.6.0.js"></script>
+<script src="./js/bootstrap-5.0.0-dist/js/bootstrap.min.js"></script>
+<script src="./js/openlayers/v6.5.0-dist/ol.js"></script>
+<script src="./js/bootstrap-datepicker-master/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="./js/select2/dist/js/select2.full.min.js"></script>
+</head>
+
+<body>
+<style>
+      p.collapse{
+         display:none;
+      }
+      
+      .ol-popup {
+        position: absolute;
+        background-color: white;
+		color:blue;
+        -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 380px;
+		max-height: 600px;
+		overflow-y:scroll;
+      }
+      .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+      }
+      .ol-popup-closer:after {
+        content: "✖";
+      }
+      
+
+
+
+</style>
+
+<div class="container">
+
+	<div class="row ">
+		<div class="col-md-2 d-flex justify-content-md-begin">
+			<a href="https://www.africamuseum.be"><img style="max-width:200px" src="./img/MRAC_logo.png"/></a>
+		</div>
+		<div class="col-md-8 d-flex">
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+			<img style="width:200px; height:48px;" src="./img/CBD_logo_FR_CMYK.jpg"/>
+		</div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Communes
+			</div>
+			<div class="col-md-4">
+			<select name="communes" id="communes" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>	
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Districts sanitaires
+			</div>
+			<div class="col-md-4">
+			<select name="districts" id="districts" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>	
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Aires de responsabilités
+			</div>
+			<div class="col-md-4">
+			<select name="aires" id="aires" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+    <div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Zones urbaines
+			</div>
+			<div class="col-md-4">
+			<select name="zones" id="zones" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Quartiers
+			</div>
+			<div class="col-md-4">
+			<select name="quartiers" id="quartiers" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>	
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Type d'institution
+			</div>
+			<div class="col-md-4">
+			<select name="categ" id="categ" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-2 d-flex justify-content-md-end">
+				Statut FOSA
+			</div>
+			<div class="col-md-4">
+			<select name="fosa" id="fosa" style="width: 100%"></select>
+			</div>
+			<div class="col-md-6"></div>
+	</div>
+	
+	<div class="row">
+			<div class="col-md-12">
+				<br/>
+			</div>
+	</div>
+	
+	
+	<div class="row">	
+		<div class="col-md-3 d-flex justify-content-md-end">
+			<input type="button" value="Search" id="search_map" name="search_map"></input>
+		</div>
+		<div class="col-md-6"></div>
+	</div>
+	<div class="row">
+			<div class="col-md-4">
+			Province <input type="checkbox" id="display_provinces" name="display_provinces" />
+			</div>
+			<div class="col-md-4">
+			Communes <input type="checkbox" id="display_communes" name="display_communes" />
+			</div>
+            <div class="col-md-4">
+			Districts <input type="checkbox" id="display_districts" name="display_districts" />
+			</div>
+			<div class="col-md-4">
+			Aires de responsabilités <input type="checkbox" id="display_areas" name="display_areas" />
+			</div>
+            <div class="col-md-4">
+			Zones <input type="checkbox" id="display_zones" name="display_zones" />
+			</div>
+            <div class="col-md-4">
+			Quartiers <input type="checkbox" id="display_quartiers" name="display_quartiers" />
+			</div>
+			
+			<div class="col-md-4">
+			Institutions médicales <input type="checkbox" id="display_medical" name="display_medical" checked/>
+			</div>
+	</div>
+	
+	<div class="row">
+		<div class="com-sm-12">
+			<div id="map" style="width:100%; height:800px;">
+			</div>
+		
+		<div id="mouse-position"></div>
+		<div id="popup" class="ol-popup">
+			  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+			  <div id="popup-content"></div>
+		 </div>
+        <div>	
+		Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="Bing" selected="selected">Bing satellite</option>
+					 </select>
+		</div>
+		</div>
+	</div>
+	
+</div>	
+<script>
+
+
+var map;
+var osm_background;
+var bing_background;
+var mousePositionControl;
+var scaleline;
+var wms_url="https://edit.africamuseum.be/geoserver/carte_sanitaire_bujumbura/wms?";
+var wfs_url="https://edit.africamuseum.be/geoserver/carte_sanitaire_bujumbura/wfs?";
+var name_layer_provinces='carte_sanitaire_bujumbura:ps_bujumburam_26082021';
+var wms_layers_provinces;
+var name_layer_communes='carte_sanitaire_bujumbura:communes_bujumburam_26082021a';
+var wms_layers_communes;
+var name_layer_districts='carte_sanitaire_bujumbura:ds_bujumburam_26082021a';
+var wms_layers_districts;
+var name_layer_aires_responsabilite='carte_sanitaire_bujumbura:ar_bujumburam_poly_26082021';
+var wms_layers_aires_responsabilite;
+var name_layer_zones='carte_sanitaire_bujumbura:zones_bujumburam_26082021';
+var wms_layers_zones;
+var name_layer_quartiers='carte_sanitaire_bujumbura:quartiers_bujumburam_poly_26082021';
+var wms_layers_quartiers;
+var name_layer_medical='carte_sanitaire_bujumbura:fosa_bujumbura_mairie_masterplan2040_02092021';
+
+
+
+var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
+
+
+var url_list_communes= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_communes+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_districts= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_districts+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_aires_responsabilite= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_aires_responsabilite+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_zones= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_zones+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+var url_list_quartiers= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_quartiers+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
+
+var url_list_types= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_medical+"&PROPERTYNAME=type_fosa&outputFormat=application%2Fjson";
+var url_list_statut_fosa= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_medical+"&PROPERTYNAME=statut_fos&outputFormat=application%2Fjson";
+
+var displayed_layers=Array();
+var removed_layers=Array();
+
+var displayed_layer;
+var disaster_loaded=false;
+//var popup_text;
+//popup
+var overlay;
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+var closer = document.getElementById('popup-closer');
+var download_url;
+
+
+var openDescription=function(id)
+{
+	window.open('description.html?id='+ id,'_blank');
+}
+	
+ var init_overlay=function()
+ {
+	 
+	overlay = new ol.Overlay(/** @type {olx.OverlayOptions} */ ({
+               element: container,
+                    autoPan: true,
+                    autoPanAnimation: {
+                      duration: 250
+                    }
+                  }));
+                  
+
+     closer.onclick = function() {
+                    overlay.setPosition(undefined);
+                    closer.blur();
+                    return false;
+                  };
+     map.addOverlay(overlay);
+ } 
+ 
+ 
+var parse_wfs_list=function(url, attribute, sel2, all_field=false)
+ {
+    
+	var list=$.getJSON( url, function( data ) {
+		var items=[];
+		var returned=[];
+		var features=data["features"];
+		if(all_field)
+		{
+			var tmp_dict={};
+			tmp_dict["id"]="";
+			tmp_dict["text"]="ALL";
+			returned.push(tmp_dict);
+		}
+		//console.log("features : ");
+		//console.log(features);
+		for(var i=0; i<features.length;i++)
+		{
+			var tmp=features[i];
+			//console.log("tmp (dans boucle) : ");
+			//console.log(tmp);
+			var tmp2=tmp["properties"][attribute];
+			if(!items.includes(tmp2))
+			{
+				items.push(tmp2);
+				
+			}
+		}
+		//console.log("items non triés");
+		//console.log(items);
+		items.sort();
+		//console.log("items triés");
+		//console.log(items);
+		for(var i=0; i<items.length;i++)
+		{
+			var tmp_dict={};
+			var tmp2=items[i];
+			tmp_dict["id"]=tmp2;
+			tmp_dict["text"]=tmp2;
+			returned.push(tmp_dict);
+		}
+		//console.log("select 2:");
+		//console.log(returned);
+		
+		//initialisé dans l'Ajax pour synchroniser
+		$(sel2).select2({
+		  data: returned,
+		  multiple:true
+		})
+				//return returned;		
+	});
+	
+	
+ }
+
+function init_wfs(cql_filter)
+{
+          console.log("INIT");
+	 
+	   
+          parse_wfs_list(url_list_communes,"nom", "#communes");		  
+	      parse_wfs_list(url_list_districts,"nom", "#districts");
+		  parse_wfs_list(url_list_aires_responsabilite,"nom", "#aires");
+          parse_wfs_list(url_list_zones,"nom", "#zones");
+          parse_wfs_list(url_list_quartiers,"nom", "#quartiers");
+		  parse_wfs_list(url_list_types,"type_fosa", "#categ", true);
+		  parse_wfs_list(url_list_statut_fosa,"statut_fos", "#fosa",true);
+
+	      if(disaster_loaded)
+		  {
+		    //console.log("enlève");
+			map.removeLayer(displayed_layer);
+			//displayed_layer=null;
+		  }
+		  
+		  var json_url=null;
+		  if(cql_filter.length==0)
+		  {
+			json_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_medical +'&' +
+						  'outputFormat=application/json&srsname=EPSG:3857';
+		    download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_medical +'&' +
+						  'outputFormat=csv&srsname=EPSG:3857';
+						  
+			$("#download_csv").attr("href", download_url);
+		  }
+		  else
+		  {
+			json_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_medical +'&' +
+						  'outputFormat=application/json&srsname=EPSG:3857&' +
+						  'CQL_FILTER=' + cql_filter						  
+						;
+			download_url=wfs_url +
+						  'version=1.1.0&request=GetFeature&typename='+ name_layer_medical +'&' +
+						  'outputFormat=csv&srsname=EPSG:3857&' +
+						  'CQL_FILTER=' + cql_filter						  
+						;
+			$("#download_csv").attr("href", download_url);
+		  }
+		  
+		  $.getJSON( json_url, function( data ) {
+                console.log(json_url);
+                //console.log(data);
+				//console.log(data);
+				var vectorSource = new ol.source.Vector({
+					features: new ol.format.GeoJSON().readFeatures(data)
+				});
+				var clusterSource = new ol.source.Cluster({
+				  distance: 40,
+				  source: vectorSource,
+				});
+				 var styleCache = {};
+				 var styleCache_hopitaux = {};
+		  displayed_layer = new ol.layer.Vector({		  
+		   source: clusterSource,		   
+		   format: new ol.format.GeoJSON({dataProjection: 'EPSG:4326'}),		 
+     	  style: function (feature_tmp) {		  
+		    var data_zoom_level=feature_tmp.get('features');
+            //console.log("test1");            
+		    //console.log(data_zoom_level);
+            //console.log("test2"); 
+			var size = feature_tmp.get('features').length;	
+				    var col_def='#339900';					
+					var style=null;				  
+					for(var i=0; i<size;i++)
+					{
+						var type_geo_ref=data_zoom_level[i].get("main_type");
+						
+					}
+					
+                    style=styleCache[size];
+					
+					if (!style) 
+					{	 
+					  
+					  style = new ol.style.Style({
+						image: new ol.style.Circle({
+						  radius: 15,
+						  stroke: new ol.style.Stroke({
+							color: '#fff',
+						  }),
+						  fill: new ol.style.Fill({
+							color: col_def,
+						  }),
+						}),
+						text: new ol.style.Text({
+						  text: size.toString(),
+						  fill: new ol.style.Fill({
+							color: '#fff',
+						  }),
+						}),
+					  });
+					  
+					styleCache[size] = style;
+					  
+					 
+					}
+					return style;
+				  }
+				  
+				});
+					
+				map.addLayer(displayed_layer);
+                displayed_layer.setZIndex(99);
+				displayed_layers.push("display_medical");
+				disaster_loaded=true;
+				var extent = vectorSource.getExtent();
+				 map.getView().fit(extent, map.getSize());
+				   if(map.getView().getZoom()>12)
+				   {
+					 map.getView().setZoom(12);
+				   }
+				   if(map.getView().getZoom()>1)
+				   {
+					   map.getView().setZoom(map.getView().getZoom()-1);
+				   }
+							
+				
+		  });
+}
+
+//pop up helper
+function isCluster(feature) {
+      if (!feature || !feature.get('features')) { 
+            return false; 
+      }
+      return feature.get('features').length >= 1;
+    }
+  
+
+function init()
+{
+	osm_background=new ol.layer.Tile(
+			{
+			source: new ol.source.OSM(),
+			visible: false,
+			
+			}
+		);
+	bing_background=new ol.layer.Tile(
+			{
+			visible: true,
+			source: new ol.source.BingMaps(
+				{
+					key:bing_key,
+					imagerySet: 'AerialWithLabelsOnDemand'
+				}
+			)
+			}
+		);
+	//position mouse
+	 mousePositionControl = new ol.control.MousePosition({
+	  
+	  projection: 'EPSG:4326',
+	  // comment the following two lines to have the mouse position
+	  // be placed within the map.
+	  className: 'custom-mouse-position',
+	  target: document.getElementById('mouse-position'),
+	  undefinedHTML: '&nbsp;',
+	});
+	
+	//barre échelle
+	 scaleline =new ol.control.ScaleLine({
+      //units: unitsSelect.value,
+    });
+	
+	//WMS
+	var init_src_wms=function(url, name_layer)
+	{
+		var tmp_layer;
+		tmp_layer=new ol.source.TileWMS(
+		{
+			url: url ,
+			serverType: 'geoserver',
+			params: {'LAYERS':name_layer , 'TILED': true},
+			transition: 0,
+		}
+		);
+
+		return tmp_layer;
+	}
+   
+   	wms_layers_provinces = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_provinces)
+		}
+	);
+    
+    wms_layers_communes = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_communes)
+		}
+	);
+	
+    wms_layers_districts = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_districts)
+		}
+	);
+	
+	wms_layers_aires_responsabilite = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_aires_responsabilite)
+		}
+	);
+    
+    wms_layers_zones = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_zones)
+		}
+	);
+	 wms_layers_quartiers = new ol.layer.Tile(
+		{
+			source: init_src_wms(wms_url, name_layer_quartiers)
+		}
+	);
+	
+
+	
+	
+
+
+
+	map=new ol.Map(
+	{
+		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
+		  target:"map", 
+          layers: [bing_background, osm_background],
+		   view: new ol.View(
+		   { 
+				//projection: 'EPSG:4326',
+				center: ol.proj.transform([29.82,-3.1], 'EPSG:4326', 'EPSG:3857'),
+				zoom: 14
+			})			
+	});
+	//attach popup
+	init_overlay();
+	removed_layers.push("display_provinces");
+    removed_layers.push("display_communes");
+	removed_layers.push("display_districts");
+	removed_layers.push("display_areas");
+    removed_layers.push("display_zones");
+	removed_layers.push("display_quartiers");
+	
+	
+	//display data popup
+	map.on('click', function(evt) {
+				var coordinate = evt.coordinate;
+				var hdms = ol.coordinate.toStringHDMS(coordinate);
+				//console.log("click");
+				var feature = map.forEachFeatureAtPixel(evt.pixel, 
+							  function(feature) { return feature; });
+				if (isCluster(feature)) {
+				//var popup = new ol.Overlay.Popup();
+				//map.addOverlay(popup);
+			 
+			   var html="";
+				// is a cluster, so loop through all the underlying features
+				var features_tmp = feature.get('features');
+				var key_sort=[]
+				var feature_bag={};
+				for(var i = 0; i < features_tmp.length; i++) {
+					key_sort[key_sort.length] = features_tmp[i].get('id');
+					feature_bag[features_tmp[i].get('id')]=features_tmp[i];
+				}
+				key_sort.sort();
+				for(var i = 0; i < key_sort.length; i++) {
+				  // here you'll have access to your normal attributes:
+				  ////console.log(features[i].get('name'));
+			     var tmp_feat=feature_bag[key_sort[i]];
+				  html+="<a target='_blank' href='./description.html?id="+ tmp_feat.get('id') +"' ><u>"+ (tmp_feat.get('id')||'') +" "+ (tmp_feat.get('type_fosa')||'') + " "+ (tmp_feat.get('nom_fosa')||'') + "</u></a>"+"<br/>";
+				  
+				}
+			   
+				 content.innerHTML = '<p>' + html +'</p>';
+					overlay.setPosition(coordinate);
+			  } 
+			});	
+
+
+}
+
+var array_criteria=function(field, param)
+{
+		var crit_tmp=Array();
+		for(var i=0; i<param.length; i++)
+		{
+			crit_tmp.push(field+"='"+param[i].replace("'","''")+"'");
+		}
+		return "("+crit_tmp.join(" OR ")+")";
+}
+
+var intersect_criteria=function( layer_shape, field, param)
+{
+		var crit_tmp=Array();
+		for(var i=0; i<param.length; i++)
+		{
+			crit_tmp.push("INTERSECTS(geom, querySingle('"+layer_shape+"','geom','"+field+"= ''"+  param[i]+"'''))");
+		}
+		return "("+crit_tmp.join(" OR ")+")";
+}
+
+var remove_empty=function(p_array)
+{
+    var index = p_array.indexOf("");
+	for(var i in p_array){
+    if(p_array[i]==''){
+        p_array.splice(i,1);
+        break;
+		}	
+	}
+	return p_array;
+	
+}
+
+var build_query=function(communes, districts, aires, zones, quartiers, categ, fosa)
+{
+    
+	var criteria=Array();
+	
+	var text_query="";
+    communes=remove_empty(communes);
+	districts=remove_empty(districts);
+	aires=remove_empty(aires);
+	zones=remove_empty(zones);
+	quartiers=remove_empty(quartiers);
+	categ=remove_empty(categ);
+	fosa=remove_empty(fosa);
+    if(communes.length>0)
+	{
+
+		criteria.push(intersect_criteria(name_layer_communes, "nom", communes));
+	}
+	
+	if(districts.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_districts, "nom" , districts));
+		
+	}
+	if(aires.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_aires_responsabilite, "nom" , aires));
+		
+	}
+	if(zones.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_zones, "nom", zones ));
+	}
+
+	if(quartiers.length>0)
+	{
+		
+		criteria.push(intersect_criteria(name_layer_quartiers,  "nom",quartiers ));
+	}
+	if(categ.length>0)
+	{
+		
+		criteria.push(array_criteria("type_fosa", categ ));
+	}
+	if(fosa.length>0)
+	{
+		criteria.push(array_criteria("statut_fos", fosa ));
+	}
+	
+	if(criteria.length>0)
+	{
+	    //console.log(" C ");
+		text_query=criteria.join(" AND ");
+		
+	}
+	console.log(text_query);
+	init_wfs(text_query);
+}
+
+var do_search=function()
+{
+   
+	var communes=$("#communes").val();
+	var districts=$("#districts").val();
+	var aires=$("#aires").val();
+	var zones=$("#zones").val();
+	var quartiers=$("#quartiers").val();
+	var categ=$("#categ").val();
+	var fosa=$("#fosa").val();
+	
+	build_query(communes, districts, aires, zones, quartiers, categ, fosa);
+}
+
+var hide_show_display=function(name_ctrl, layer)
+{
+	if(displayed_layers.includes(name_ctrl))
+	{
+	    //console.log(displayed_layers);
+		var i=displayed_layers.indexOf(name_ctrl);
+		displayed_layers.splice(i,1);
+		 //console.log(displayed_layers);
+		removed_layers.push(name_ctrl);
+		map.removeLayer(layer);
+	}
+	else if(removed_layers.includes(name_ctrl))
+	{
+	    //console.log(removed_layers);
+		var i=removed_layers.indexOf(name_ctrl);
+		removed_layers.splice(i,1);
+		 //console.log(removed_layers);
+		displayed_layers.push(name_ctrl);
+		map.addLayer(layer);
+        if(name_ctrl=="display_medical")
+        {
+            layer.setZIndex(99);
+        }
+	}
+}
+
+//code run when page loaded
+$(document).ready(
+
+	function()
+	{
+	    //date
+		
+		//click
+		$("#search_map").click(
+			function()
+			{
+				do_search();
+			}
+		);
+		
+		$("#display_provinces").click(
+			function()
+			{
+				hide_show_display("display_provinces", wms_layers_provinces);
+			}
+		);
+        $("#display_communes").click(
+			function()
+			{
+				hide_show_display("display_provinces", wms_layers_communes);
+			}
+		);
+		$("#display_districts").click(
+			function()
+			{
+				hide_show_display("display_districts", wms_layers_districts);
+			}
+		);
+		
+		$("#display_areas").click(
+			function()
+			{
+				hide_show_display("display_areas", wms_layers_aires_responsabilite);
+			}
+		);
+        
+        $("#display_zones").click(
+			function()
+			{
+				hide_show_display("display_zones", wms_layers_zones);
+			}
+		);
+        
+        $("#display_quartiers").click(
+			function()
+			{
+				hide_show_display("display_quartiers", wms_layers_quartiers);
+			}
+		);
+		
+		$("#display_medical").click(
+			function()
+			{
+				hide_show_display("display_medical", displayed_layer);
+			}
+		);
+		
+		
+		
+		
+		//end clicc
+		//console.log("test");
+		//create map
+		init();
+		//add cluster seism
+		init_wfs("");
+		
+		$("#select_background").change(
+			function()
+			{
+				console.log($("#select_background").val());
+				var tmp_val=$("#select_background").val();
+				if(tmp_val=="Bing")
+				{
+					bing_background.setVisible(true);
+					osm_background.setVisible(false);
+				}
+				else if(tmp_val=="OpenStreetMap")
+				{
+					bing_background.setVisible(false);
+					osm_background.setVisible(true);
+				}
+			}
+		);
+		
+		
+	}
+
+);
+
+
+
+
+
+</script>
+
+
+</body>
+
+</html>
