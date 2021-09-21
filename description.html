@@ -49,7 +49,7 @@
         <div>	
 		Fond de carte <select id="select_background">
 						<option value="OpenStreetMap">OpenStreetMap</option>
-						<option value="Bing" selected="selected">Bing satellite</option>
+						<option value="esri" selected="selected">ESRI satellite</option>
 					 </select>
 	</div>
 	<div class="row">
@@ -81,7 +81,7 @@ var name_layer_aleas='harissa:v_aleas_harissa_with_date_all';
 var name_field_territories="territoire";
 var vectorSource;
 var features;
-var bing_key="Ap3eFRefFd94_D4cqsicw-Fk1-d4kRat9pstTO4oo_i9anyUqrfQcqL9Ew9CJahg";
+
 
 var findGetParameter=function(parameterName) 
 {
@@ -97,40 +97,56 @@ var findGetParameter=function(parameterName)
     return result;
 }
 
+var unspecifiedText=function(data)
+{
+	if(data ==null )
+	{
+		return "Non spécifié";
+	}
+	else if(data =="null" )
+	{
+		return "Non spécifié";
+	}
+	else if(data =="n/a" )
+	{
+		return "Non spécifié";
+	}
+	else
+	{
+		return data;
+	}
+}
 function display_data(data)
 {
 	
 	var table_body=$("#table_description").find("tbody");
 
-	table_body.append("<tr><td>id</td><td>"+data["id"]+"</td></tr>");
-	table_body.append("<tr><td>type</td><td>"+data["type"]+"</td></tr>");
-	table_body.append("<tr><td>date</td><td>"+data["date"]+"</td></tr>");
-	table_body.append("<tr><td>territoire</td><td>"+data["territoire"]+"</td></tr>");
-	table_body.append("<tr><td>latitude</td><td>"+data["lat"]+"</td></tr>");
-	table_body.append("<tr><td>longitude</td><td>"+data["lon"]+"</td></tr>");
-	table_body.append("<tr><td>altitude</td><td>"+data["alt"]+"</td></tr>");
-	table_body.append("<tr><td>colcom</td><td>"+data["colcom"]+"</td></tr>");
-    table_body.append("<tr><td>grpqua</td><td>"+data["grpqua"]+"</td></tr>");
-	table_body.append("<tr><td>vilcel</td><td>"+data["vilcel"]+"</td></tr>");
-	table_body.append("<tr><td>morts</td><td>"+data["nmort"]+"</td></tr>");
-	table_body.append("<tr><td>blessés</td><td>"+data["nblesse"]+"</td></tr>");
-	table_body.append("<tr><td>sans-abris</td><td>"+data["nsansabris"]+"</td></tr>");
-	table_body.append("<tr><td>impact logement</td><td>"+data["logement"]+"</td></tr>");
-	table_body.append("<tr><td>impact route</td><td>"+data["route"]+"</td></tr>");
-	table_body.append("<tr><td>impact pont</td><td>"+data["pont"]+"</td></tr>");
-	table_body.append("<tr><td>impact culture</td><td>"+data["culture"]+"</td></tr>");
-	table_body.append("<tr><td>surface vivrière</td><td>"+data["svivriere"]+"</td></tr>");
-	table_body.append("<tr><td>surface rente</td><td>"+data["srente"]+"</td></tr>");
-	table_body.append("<tr><td>surface forêt</td><td>"+data["sforet"]+"</td></tr>");
-	table_body.append("<tr><td>impact bétail</td><td>"+data["betail"]+"</td></tr>");
-	table_body.append("<tr><td>mise à jour technique</td><td>"+data["max"]+"</td></tr>");
+	table_body.append("<tr><td>Id</td><td>"+unspecifiedText(data["id"]) +"</td></tr>");
+	table_body.append("<tr><td>Type</td><td>"+unspecifiedText(data["type"]) +"</td></tr>");
+	table_body.append("<tr><td>Date</td><td>"+unspecifiedText(data["date"]) +"</td></tr>");
+	table_body.append("<tr><td>Territoire</td><td >"+unspecifiedText(data["territoire"]) +"</td></tr>");	
+	table_body.append("<tr><td>Collectivité (rurale)/<br/>Commune (urbaine)</td><td class='align-top'>"+unspecifiedText(data["colcom"]) +"</td></tr>");
+    table_body.append("<tr><td>Groupement (rural)/<br/>Quartier (urbain)</td><td class='align-top'>"+unspecifiedText(data["grpqua"]) +"</td></tr>");
+	table_body.append("<tr><td>Ville/<br/>Cellule (rurale)</td><td class='align-top'>"+unspecifiedText(data["vilcel"]) +"</td></tr>");
+	table_body.append("<tr><td>Morts</td><td>"+unspecifiedText(data["nmort"]) +"</td></tr>");
+	table_body.append("<tr><td>Blessés</td><td>"+unspecifiedText(data["nblesse"]) +"</td></tr>");
+	table_body.append("<tr><td>Sans-abris</td><td>"+unspecifiedText(data["nsansabris"]) +"</td></tr>");
+	table_body.append("<tr><td>Impact logement</td><td>"+unspecifiedText(data["logement"]) +"</td></tr>");
+	table_body.append("<tr><td>Impact route</td><td>"+unspecifiedText(data["route"]) +"</td></tr>");
+	table_body.append("<tr><td>Impact pont</td><td>"+unspecifiedText(data["pont"]) +"</td></tr>");
+	table_body.append("<tr><td>Impact culture</td><td>"+unspecifiedText(data["culture"]) +"</td></tr>");
+	table_body.append("<tr><td>Surface vivrière</td><td>"+unspecifiedText(data["svivriere"]) +"</td></tr>");
+	table_body.append("<tr><td>Surface rente</td><td>"+unspecifiedText(data["srente"]) +"</td></tr>");
+	table_body.append("<tr><td>Surface forêt</td><td>"+unspecifiedText(data["sforet"]) +"</td></tr>");
+	table_body.append("<tr><td>impact bétail</td><td>"+unspecifiedText(data["betail"]) +"</td></tr>");
+	table_body.append("<tr><td>Mise à jour technique</td><td>"+unspecifiedText(data["max"]) +"</td></tr>");
 	
 }
 function display_alea(p_id)
 {
     var tmp_url=wfs_url +
 						  'version=1.1.0&request=GetFeature&typename='+ name_layer_aleas +'&' +
-						  'outputFormat=application/json&srsname=EPSG:4326&' +
+						  'outputFormat=application/json&srsname=EPSG:3857&' +
 						  'CQL_FILTER=id%3D'+p_id 
 						;
 	
@@ -179,7 +195,7 @@ function display_alea(p_id)
 		 
 		var tmp_view=new ol.View(
 			   { 
-					projection: 'EPSG:4326',
+					
 					center: center,
 					zoom: 11
 				});
@@ -205,13 +221,17 @@ function init(p_id)
 			
 			}
 		);
-	bing_background=new ol.layer.Tile(
+	esri_background=new ol.layer.Tile(
 			{
 			visible: true,
-			source: new ol.source.BingMaps(
+			source: new ol.source.XYZ(
 				{
-					key:bing_key,
-					imagerySet: 'AerialWithLabelsOnDemand'
+					 attributions:
+					'Tiles © <a href="https://services.arcgisonline.com/ArcGIS/' +
+							'rest/services/World_Topo_Map/MapServer">ArcGIS</a>',
+					url:
+					'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+					'World_Imagery/MapServer/tile/{z}/{y}/{x}',
 				}
 			)
 			}
@@ -235,7 +255,7 @@ function init(p_id)
 	{
 		  controls: ol.control.defaults().extend([mousePositionControl, scaleline]),		  
 		  target:"map", 
-          layers: [osm_background,bing_background],
+          layers: [osm_background,esri_background],
 		  
 	});
 	display_alea(p_id);
@@ -254,14 +274,14 @@ $(document).ready(
 			{
 				console.log($("#select_background").val());
 				var tmp_val=$("#select_background").val();
-				if(tmp_val=="Bing")
+				if(tmp_val=="esri")
 				{
-					bing_background.setVisible(true);
+					esri_background.setVisible(true);
 					osm_background.setVisible(false);
 				}
 				else if(tmp_val=="OpenStreetMap")
 				{
-					bing_background.setVisible(false);
+					esri_background.setVisible(false);
 					osm_background.setVisible(true);
 				}
 			}
