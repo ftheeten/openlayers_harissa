@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "id": "Foudre",
+      "text": "Bliksem"
+    },
+    {
+      "id": "Glissement de terrain",
+      "text": "Aardverschuiving"
+    }
+	,
+    {
+      "id": "Inondation",
+      "text": "Overstroming"
+    },
+    {
+      "id": "Tempete de grele",
+      "text": "Hagelstorm"
+    },
+    {
+      "id": "Tempete_Vents violents",
+      "text": "Storm en harde wind"
+    },
+    {
+      "id": "Tremblement de terre",
+      "text": "Aardbeving"
+    }
+  ]
+  
+}

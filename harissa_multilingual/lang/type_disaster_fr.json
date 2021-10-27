@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "id": "Foudre",
+      "text": "Foudre"
+    },
+    {
+      "id": "Glissement de terrain",
+      "text": "Glissement de terrain"
+    }
+	,
+    {
+      "id": "Inondation",
+      "text": "Inondation"
+    },
+    {
+      "id": "Tempete de grele",
+      "text": "Tempete de grêle"
+    },
+    {
+      "id": "Tempete_Vents violents",
+      "text": "Tempete_Vents violents"
+    },
+    {
+      "id": "Tremblement de terre",
+      "text": "Tremblement de terre"
+    }
+  ]  
+}

@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "id": "Foudre",
+      "text": "Lightning"
+    },
+    {
+      "id": "Glissement de terrain",
+      "text": "Landslide"
+    }
+	,
+    {
+      "id": "Inondation",
+      "text": "Flood"
+    },
+    {
+      "id": "Tempete de grele",
+      "text": "Hail storm"
+    },
+    {
+      "id": "Tempete_Vents violents",
+      "text": "Storm and strong winds"
+    },
+    {
+      "id": "Tremblement de terre",
+      "text": "Earthquake"
+    }
+  ]
+  
+}
