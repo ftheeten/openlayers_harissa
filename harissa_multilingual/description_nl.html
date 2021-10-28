@@ -38,7 +38,7 @@
 	</div>
 	<div class="row">
 		<div class="com-sm-12">
-			<div id="map" style="width:50%; height:400px;">
+			<div id="map" style="height:400px;">
 			</div>
 		
 		<div id="mouse-position"></div>
@@ -55,10 +55,9 @@
 	<div class="row">
 	<div class="com-sm-12">
 		Description:
-		<table id="table_description" name="table_description" class="table_description">
-			<tbody>
-			</tbody>
-		</table>
+		<div id="table_description" name="table_description" class="table_description row">
+			
+		</div>
 	</div>
 	</div>
 </div>
@@ -119,27 +118,22 @@ var unspecifiedText=function(data)
 function display_data(data)
 {
 	
-	var table_body=$("#table_description").find("tbody");
+	var table_body=$("#table_description");
 
-	table_body.append("<tr><td>Id</td><td>"+unspecifiedText(data["id"]) +"</td></tr>");
-	table_body.append("<tr><td>Categorie</td><td>"+unspecifiedText(data["type"]) +"</td></tr>");
-	table_body.append("<tr><td>Datum</td><td>"+unspecifiedText(data["date"]) +"</td></tr>");
-	table_body.append("<tr><td>Territorium</td><td >"+unspecifiedText(data["territoire"]) +"</td></tr>");	
-	table_body.append("<tr><td>Gemeenschap (landelijk)/<br/>Gemeente (stedelijk)</td><td class='align-top'>"+unspecifiedText(data["colcom"]) +"</td></tr>");
-    table_body.append("<tr><td>Groep (landelijk)/<br/>Wijk (stedelijk)</td><td class='align-top'>"+unspecifiedText(data["grpqua"]) +"</td></tr>");
-	table_body.append("<tr><td>Stad/<br/>Cel (landelijk)</td><td class='align-top'>"+unspecifiedText(data["vilcel"]) +"</td></tr>");
-	table_body.append("<tr><td>Doden</td><td>"+unspecifiedText(data["nmort"]) +"</td></tr>");
-	table_body.append("<tr><td>Gewonden</td><td>"+unspecifiedText(data["nblesse"]) +"</td></tr>");
-	table_body.append("<tr><td>Daklozen</td><td>"+unspecifiedText(data["nsansabris"]) +"</td></tr>");
-	table_body.append("<tr><td>Behuizingsimpact</td><td>"+unspecifiedText(data["logement"]) +"</td></tr>");
-	table_body.append("<tr><td>Inslag op de weg</td><td>"+unspecifiedText(data["route"]) +"</td></tr>");
-	table_body.append("<tr><td>Inslag op bruggen</td><td>"+unspecifiedText(data["pont"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact op de landbouw</td><td>"+unspecifiedText(data["culture"]) +"</td></tr>");
-	table_body.append("<tr><td>Voedsel oppervlak</td><td>"+unspecifiedText(data["svivriere"]) +"</td></tr>");
-	table_body.append("<tr><td>Huur oppervlakte</td><td>"+unspecifiedText(data["srente"]) +"</td></tr>");
-	table_body.append("<tr><td>Bos oppervlak</td><td>"+unspecifiedText(data["sforet"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact vee</td><td>"+unspecifiedText(data["betail"]) +"</td></tr>");
-	table_body.append("<tr><td>Technische update</td><td>"+unspecifiedText(data["max"]) +"</td></tr>");
+	
+	table_body.append("<div class='col-sm-2'>Categorie</div><div class='col-sm-4'>"+unspecifiedText(data["type"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Datum</div><div class='col-sm-4'>"+unspecifiedText(data["date"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Territorium</div><div class='col-sm-4'>"+unspecifiedText(data["territoire"]) +"</div>");	
+	table_body.append("<div class='col-sm-2'>Gemeenschap (landelijk)/<br/>Gemeente (stedelijk)</div><div class='col-sm-4'>"+unspecifiedText(data["colcom"]) +"</div>");    
+	table_body.append("<div class='col-sm-2'>Doden</div><div class='col-sm-4'>"+unspecifiedText(data["nmort"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Gewonden</div><div class='col-sm-4'>"+unspecifiedText(data["nblesse"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Daklozen</div><div class='col-sm-4'>"+unspecifiedText(data["nsansabris"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Behuizingsimpact</div><div class='col-sm-4'>"+unspecifiedText(data["logement"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Inslag op de weg</div><div class='col-sm-4'>"+unspecifiedText(data["route"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Inslag op bruggen</div><div class='col-sm-4'>"+unspecifiedText(data["pont"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Impact op de landbouw</div><div class='col-sm-4'>"+unspecifiedText(data["culture"]) +"</div>");	
+	table_body.append("<div class='col-sm-2'>Impact vee</div><div class='col-sm-4'>"+unspecifiedText(data["betail"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Technische update</div><div class='col-sm-4'>"+unspecifiedText(data["max"]) +"</div>");
 	
 }
 function display_alea(p_id)

@@ -38,7 +38,7 @@
 	</div>
 	<div class="row">
 		<div class="com-sm-12">
-			<div id="map" style="width:50%; height:400px;">
+			<div id="map" style="height:400px;">
 			</div>
 		
 		<div id="mouse-position"></div>
@@ -55,10 +55,8 @@
 	<div class="row">
 	<div class="com-sm-12">
 		Description:
-		<table id="table_description" name="table_description" class="table_description">
-			<tbody>
-			</tbody>
-		</table>
+		<div id="table_description" name="table_description" class="table_description row">			
+		</div>
 	</div>
 	</div>
 </div>
@@ -119,27 +117,22 @@ var unspecifiedText=function(data)
 function display_data(data)
 {
 	
-	var table_body=$("#table_description").find("tbody");
+	var table_body=$("#table_description");
 
-	table_body.append("<tr><td>Id</td><td>"+unspecifiedText(data["id"]) +"</td></tr>");
-	table_body.append("<tr><td>Type</td><td>"+unspecifiedText(data["type"]) +"</td></tr>");
-	table_body.append("<tr><td>Date</td><td>"+unspecifiedText(data["date"]) +"</td></tr>");
-	table_body.append("<tr><td>Territoire</td><td >"+unspecifiedText(data["territoire"]) +"</td></tr>");	
-	table_body.append("<tr><td>Collectivité (rurale)/<br/>Commune (urbaine)</td><td class='align-top'>"+unspecifiedText(data["colcom"]) +"</td></tr>");
-    table_body.append("<tr><td>Groupement (rural)/<br/>Quartier (urbain)</td><td class='align-top'>"+unspecifiedText(data["grpqua"]) +"</td></tr>");
-	table_body.append("<tr><td>Ville/<br/>Cellule (rurale)</td><td class='align-top'>"+unspecifiedText(data["vilcel"]) +"</td></tr>");
-	table_body.append("<tr><td>Morts</td><td>"+unspecifiedText(data["nmort"]) +"</td></tr>");
-	table_body.append("<tr><td>Blessés</td><td>"+unspecifiedText(data["nblesse"]) +"</td></tr>");
-	table_body.append("<tr><td>Sans-abris</td><td>"+unspecifiedText(data["nsansabris"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact logement</td><td>"+unspecifiedText(data["logement"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact route</td><td>"+unspecifiedText(data["route"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact pont</td><td>"+unspecifiedText(data["pont"]) +"</td></tr>");
-	table_body.append("<tr><td>Impact culture</td><td>"+unspecifiedText(data["culture"]) +"</td></tr>");
-	table_body.append("<tr><td>Surface vivrière</td><td>"+unspecifiedText(data["svivriere"]) +"</td></tr>");
-	table_body.append("<tr><td>Surface rente</td><td>"+unspecifiedText(data["srente"]) +"</td></tr>");
-	table_body.append("<tr><td>Surface forêt</td><td>"+unspecifiedText(data["sforet"]) +"</td></tr>");
-	table_body.append("<tr><td>impact bétail</td><td>"+unspecifiedText(data["betail"]) +"</td></tr>");
-	table_body.append("<tr><td>Mise à jour technique</td><td>"+unspecifiedText(data["max"]) +"</td></tr>");
+	
+	table_body.append("<div class='col-sm-2'>Type</div><div class='col-sm-4'>"+unspecifiedText(data["type"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Date</div><div class='col-sm-4'>"+unspecifiedText(data["date"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Territoire</div><div class='col-sm-4'>"+unspecifiedText(data["territoire"]) +"</div>");	
+	table_body.append("<div class='col-sm-2'>Collectivité (rurale)/<br/>Commune (urbaine)</div><div class='col-sm-4'>"+unspecifiedText(data["colcom"]) +"</div>");    
+	table_body.append("<div class='col-sm-2'>Morts</div><div class='col-sm-4'>"+unspecifiedText(data["nmort"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Blessés</div><div class='col-sm-4'>"+unspecifiedText(data["nblesse"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Sans-abris</div><div class='col-sm-4'>"+unspecifiedText(data["nsansabris"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Impact logement</div><div class='col-sm-4'>"+unspecifiedText(data["logement"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Impact route</div><div class='col-sm-4'>"+unspecifiedText(data["route"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Impact pont</div><div class='col-sm-4'>"+unspecifiedText(data["pont"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Impact culture</div><div class='col-sm-4'>"+unspecifiedText(data["culture"]) +"</td></tr>");	
+	table_body.append("<div class='col-sm-2'>impact bétail</div><div class='col-sm-4'>"+unspecifiedText(data["betail"]) +"</div>");
+	table_body.append("<div class='col-sm-2'>Mise à jour technique</div><div class='col-sm-4'>"+unspecifiedText(data["max"]) +"</div>");
 	
 }
 function display_alea(p_id)
