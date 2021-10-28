@@ -19,6 +19,43 @@ var wms_cluster_seismes;
 var wms_layers_seismes;
 var wfs_layers_seismes;
 
+var min_date= null;
+var max_date= null;
+
+var get_date_range=function(json)
+{	
+	min_date= null;
+	max_date= null;
+	var features=json["features"];
+	for(var i=0; i<features.length;i++)
+	{
+		
+		var tm_elem=features[i];		
+		var tmp_date=tm_elem["properties"]['date'];
+		if(tmp_date!== null )
+		{
+			
+			if(min_date===null)
+			{
+				min_date=tmp_date;
+			}
+			if(max_date===null)
+			{
+				max_date=tmp_date;
+			}
+			if(tmp_date<min_date)
+			{
+				min_date=tmp_date;
+			}
+			if(tmp_date>max_date)
+			{
+				max_date=tmp_date;
+			}
+		}	
+	}
+	
+}
+
 
 var url_list_provinces= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_provinces+"&PROPERTYNAME=nom&outputFormat=application%2Fjson";
 var url_list_secteurs= wfs_url + "service=WFS&version=1.0.0&request=GetFeature&typename="+name_layer_aleas+"&PROPERTYNAME="+name_field_secteurs+"&outputFormat=application%2Fjson";
@@ -82,21 +119,21 @@ var parse_wfs_list=function(url, attribute, sel2, extra_url="", refresh=false)
   
 	if(extra_url.length>0)
 	{
-		console.log("additional");
+		//console.log("additional");
 		url=url+extra_url;
 	}
-	console.log(url);
+	//console.log(url);
 	var list=$.getJSON( url, function( data ) {
 		var items=[];
 		var returned=[];
 		var features=data["features"];
-		//console.log("features : ");
-		//console.log(features);
+		////console.log("features : ");
+		////console.log(features);
 		for(var i=0; i<features.length;i++)
 		{
 			var tmp=features[i];
-			//console.log("tmp (dans boucle) : ");
-			//console.log(tmp);
+			////console.log("tmp (dans boucle) : ");
+			////console.log(tmp);
 			var tmp2=tmp["properties"][attribute];
 			if(!items.includes(tmp2))
 			{
@@ -104,11 +141,11 @@ var parse_wfs_list=function(url, attribute, sel2, extra_url="", refresh=false)
 				
 			}
 		}
-		//console.log("items non triés");
-		//console.log(items);
+		////console.log("items non triés");
+		////console.log(items);
 		items.sort();
-		//console.log("items triés");
-		//console.log(items);
+		////console.log("items triés");
+		////console.log(items);
 		for(var i=0; i<items.length;i++)
 		{
 			var tmp_dict={};
@@ -117,8 +154,8 @@ var parse_wfs_list=function(url, attribute, sel2, extra_url="", refresh=false)
 			tmp_dict["text"]=tmp2;
 			returned.push(tmp_dict);
 		}
-		//console.log("select 2:");
-		//console.log(returned);
+		////console.log("select 2:");
+		////console.log(returned);
 		
 		//initialisé dans l'Ajax pour synchroniser
 		if(refresh)
@@ -130,7 +167,7 @@ var parse_wfs_list=function(url, attribute, sel2, extra_url="", refresh=false)
 		}
 		else
 		{
-			console.log("init");
+			//console.log("init");
 			$(sel2).select2({
 			  data: returned,
 			  multiple:true
@@ -149,7 +186,7 @@ function isInt(value) {
 function analyze_result(json_data)
 {
 	var count_result=json_data["features"].length;
-	console.log(count_result)
+	//console.log(count_result)
 	var nb_morts=0;
 	var nb_blesses=0;
 	var nb_sans_abris=0;
@@ -187,7 +224,10 @@ function analyze_result(json_data)
 	{
 		nb_sans_abris="non défini";
 	}
+	get_date_range(json_data);
 	return {
+		"min_date":min_date,
+		"max_date": max_date,
 		"count_result": count_result,
 		"nb_morts":nb_morts,
 		"nb_blesses":nb_blesses,
@@ -225,7 +265,7 @@ function init_wfs(cql_filter)
 		 
 	      if(disaster_loaded)
 		  {
-		    //console.log("enlève");
+		    ////console.log("enlève");
 			map.removeLayer(displayed_layer);
 			//displayed_layer=null;
 		  }
@@ -262,17 +302,20 @@ function init_wfs(cql_filter)
 				
 				if(language=="fr")
 				 {
+					$("#div_impact").html("Aperçu global du nombre d’événements et des impacts humains ("+min_date+" – "+max_date+") ");
 					$("#desc_search").html("<div class='row'><div class='col-md-3'>Nombre d'évènements</div><div class='col-md-9'>"+result_metadata["count_result"]+"</div><div class='col-md-3'>Nombre de morts</div><div class='col-md-9'>"+result_metadata["nb_morts"]+"</div><div class='col-md-3'>Nombre de blessés</div><div class='col-md-9'>"+result_metadata["nb_blesses"]+"</div><div class='col-md-3'>Nombre de sans-abris</div><div class='col-md-9'>"+result_metadata["nb_sans_abris"]+"</div></div>");
 				 }
 				 else if(language=="nl")
 				 {
+					$("#div_impact").html("Algemeen overzicht van het aantal gebeurtenissen en van de menselijke impact  ("+min_date+" – "+max_date+") ");
 					$("#desc_search").html("<div class='row'><div class='col-md-3'>Aantal gebeurtenissen</div><div class='col-md-9'>"+result_metadata["count_result"]+"</div><div class='col-md-3'>Aantal doden</div><div class='col-md-9'>"+result_metadata["nb_morts"]+"</div><div class='col-md-3'>Aantal gewonden</div><div class='col-md-9'>"+result_metadata["nb_blesses"]+"</div><div class='col-md-3'>Aantal daklozen</div><div class='col-md-9'>"+result_metadata["nb_sans_abris"]+"</div></div>");
 				 }
 				 else if(language=="en")
 				 {
+					$("#div_impact").html("Overview on the amount of events and on human impact ("+min_date+" – "+max_date+") ");
 					$("#desc_search").html("<div class='row'><div class='col-md-3'>Amount events</div><div class='col-md-9'>"+result_metadata["count_result"]+"</div><div class='col-md-3'>Amount deaths</div><div class='col-md-9'>"+result_metadata["nb_morts"]+"</div><div class='col-md-3'>Amount wounded persons</div><div class='col-md-9'>"+result_metadata["nb_blesses"]+"</div><div class='col-md-3'>Amount homelesses</div><div class='col-md-9'>"+result_metadata["nb_sans_abris"]+"</div></div>");
 				 }
-				console.log(result_metadata);
+				////console.log(result_metadata);
 				var vectorSource = new ol.source.Vector({
 					features: new ol.format.GeoJSON().readFeatures(data)
 				});
@@ -473,7 +516,7 @@ function init()
 	map.on('click', function(evt) {
 				var coordinate = evt.coordinate;
 				var hdms = ol.coordinate.toStringHDMS(coordinate);
-				//console.log("click");
+				//////console.log("click");
 				var feature = map.forEachFeatureAtPixel(evt.pixel, 
 							  function(feature) { return feature; });
 				if (isCluster(feature)) {
@@ -492,7 +535,7 @@ function init()
 				key_sort.sort();
 				for(var i = 0; i < key_sort.length; i++) {
 				  // here you'll have access to your normal attributes:
-				  ////console.log(features[i].get('name'));
+				  ////////console.log(features[i].get('name'));
 			     var tmp_feat=feature_bag[key_sort[i]];
 				 if(language=="fr")
 				 {
@@ -546,13 +589,13 @@ var build_query=function(date_from, date_to, categ, provinces, territoires, sect
 	var text_query="";
 	if(date_from.length>0)
 	{
-		//console.log("a date from");
+		//////console.log("a date from");
 		criteria.push("date >='"+date_from+"'");
 		
 	}
 	if(date_to.length>0)
 	{
-		//console.log("a date to");
+		//////console.log("a date to");
 		criteria.push("date <='"+date_to+"'");
 		if(date_to<date_from)
 		{
@@ -609,22 +652,22 @@ var build_query=function(date_from, date_to, categ, provinces, territoires, sect
 	}
 	if(criteria.length>0 && criteria_impact.length>0)
 	{
-		//console.log(" A ");
+		//////console.log(" A ");
 		text_query=criteria.join(" AND ") + " AND "+ criteria_impact.join(" OR ");
 	}
 	else if(criteria.length==0 && criteria_impact.length>0)
 	{
-	    //console.log(" B ");
+	    //////console.log(" B ");
 		text_query= criteria_impact.join(" OR ");
 	}
 	else if(criteria.length>0 && criteria_impact.length==0)
 	{
-	    //console.log(" C ");
+	    //////console.log(" C ");
 		text_query=criteria.join(" AND ");
 	}
 
 	
-		console.log(text_query);
+		////console.log(text_query);
 		init_wfs(text_query);
 }
 
@@ -642,13 +685,13 @@ var do_search=function()
 	var logement=$("#logement").prop("checked");
 	var cultures=$("#cultures").prop("checked");
 	var cattle=$("#cattle").prop("checked");
-	//console.log(provinces);
-	//console.log(territoires);
-	//console.log(secteurs);
-	//console.log(categ);
-	//console.log(date_to);
-	//console.log(date_from);
-	//console.log(morts);
+	//////console.log(provinces);
+	//////console.log(territoires);
+	//////console.log(secteurs);
+	//////console.log(categ);
+	//////console.log(date_to);
+	//////console.log(date_from);
+	//////console.log(morts);
 	build_query(date_from, date_to, categ, provinces, territoires, secteurs, morts, blesses, homelesses, logement, cultures, cattle);
 }
 
@@ -656,19 +699,19 @@ var hide_show_display=function(name_ctrl, layer)
 {
 	if(displayed_layers.includes(name_ctrl))
 	{
-	    //console.log(displayed_layers);
+	    //////console.log(displayed_layers);
 		var i=displayed_layers.indexOf(name_ctrl);
 		displayed_layers.splice(i,1);
-		 //console.log(displayed_layers);
+		 //////console.log(displayed_layers);
 		removed_layers.push(name_ctrl);
 		map.removeLayer(layer);
 	}
 	else if(removed_layers.includes(name_ctrl))
 	{
-	    //console.log(removed_layers);
+	    //////console.log(removed_layers);
 		var i=removed_layers.indexOf(name_ctrl);
 		removed_layers.splice(i,1);
-		 //console.log(removed_layers);
+		 //////console.log(removed_layers);
 		displayed_layers.push(name_ctrl);
 		map.addLayer(layer);
 	}
@@ -715,7 +758,7 @@ var hide_show_display=function(name_ctrl, layer)
 		);
 		
 		//end clicc
-		//console.log("test");
+		//////console.log("test");
 		//create map
 		init();
 		//add cluster seism
@@ -724,7 +767,7 @@ var hide_show_display=function(name_ctrl, layer)
 		$("#select_background").change(
 			function()
 			{
-				console.log($("#select_background").val());
+				////console.log($("#select_background").val());
 				var tmp_val=$("#select_background").val();
 				if(tmp_val=="ESRI_SAT")
 				{
