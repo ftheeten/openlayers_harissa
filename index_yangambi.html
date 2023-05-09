@@ -1,0 +1,472 @@
+﻿
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<script src="./js/ol/7_3_0/dist/ol.js"></script>
+<link rel="stylesheet" href="./js/ol/7_3_0/ol.css">
+<script src="./js/jquery/jquery-3.6.4.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Limite RBY
+			</div>
+			<div class="col-md-2">
+			<input type="checkbox" name="chk_limit_rby" id="chk_limit_rby"/>
+			</div>
+		
+		
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Routes 2020
+		</div>
+		<div class="col-md-2">
+			<input type="checkbox" name="chk_routes" id="chk_routes"/>
+		</div>
+		
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Eaux surfaciques
+		</div>
+		<div class="col-md-2">
+			<input type="checkbox" name="chk_surface" id="chk_surface"/>			
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Réseau hydrographique
+		</div>
+		<div class="col-md-1">
+			<input type="checkbox" name="chk_hydro" id="chk_hydro"/>
+		</div>
+		
+	</div>
+	<div class="row">
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Mega transect
+		</div>
+		<div class="col-md-1">
+			<input type="checkbox" name="chk_mega_transect" id="chk_mega_transect"/>
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Transect Ouest (features)
+		</div>
+		<div class="col-md-1">
+			<input type="checkbox" name="chk_mega_transect_ouest_feat" id="chk_mega_transect_ouest_feat"/>
+		</div>
+		<div class="col-md-2 d-flex justify-content-md-end">
+				Intervales 500 m
+		</div>
+		<div class="col-md-1">
+			<input type="checkbox" name="chk_inter_500" id="chk_inter_500"/>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-10">
+			<div id="map" style="width:100%; height:800px;">
+			</div>
+			<div id="mouse-position"></div>
+			<div id="popup" class="ol-popup">
+				  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+				  <div id="popup-content"></div>
+			 </div>
+			<div>	
+			Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="ESRI_SAT" selected="selected">ESRI Satellite layer</option>
+					 </select>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			Legende transect ouest
+			<img src="https://edit.africamuseum.be/geoserver/yangambi_transect/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=20&LAYER==yangambi_transect%3ATransectOuest_features" />
+			<div class="row">
+					<div class="col-md-10">Champ</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_field" id="chk_mega_transect_ouest_feat_field" checked />
+					</div>
+					<div class="col-md-10">Forêt marécageuse</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_marais" id="chk_mega_transect_ouest_feat_marais" checked />
+					</div>
+					<div class="col-md-10">Forêt primaire</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_primaire" id="chk_mega_transect_ouest_feat_primaire" checked />
+					</div>
+					<div class="col-md-10">Forêt secondaire</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_secondaire" id="chk_mega_transect_ouest_feat_secondaire" checked />
+					</div>
+					<div class="col-md-10">Forêt jachère</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_jachere" id="chk_mega_transect_ouest_feat_jachere" checked />
+					</div>
+					<div class="col-md-10">Indéfini</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_undefined" id="chk_mega_transect_ouest_feat_undefined" checked />
+					</div>
+					<input type="button" id="clean_highlight" name="clean_highlight" value="Clean highlight"/>
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+<script>
+	var map;
+	var crs_map="EPSG:4326";
+	var osm_background;
+	var esri_background;
+	var mousePositionControl;
+	var scaleline;
+	var wms_url="https://edit.africamuseum.be/geoserver/yangambi_transect/wms?";
+	var wfs_url="https://edit.africamuseum.be/geoserver/yangambi_transect/wfs?";
+	var global_visibility={};
+	var name_layer_limit_rby="yangambi_transect:RBY_LimitesZones";
+	var wms_layer_limit_rby= null;
+	var name_layer_roads="yangambi_transect:Routes_2020";
+	var wms_layer_roads= null;
+	var name_layer_surface="yangambi_transect:Eau_Surfacique";
+	var wms_layer_surface= null;
+	var name_layer_hydro="yangambi_transect:Reseau_Hydro";
+	var wms_layer_hydro= null;
+	var name_layer_mega_transect="yangambi_transect:Megatransect1.5";
+	var wms_layer_mega_transect= null;
+	var name_layer_mega_transect_ouest_feat="yangambi_transect:TransectOuest_features";
+	var wms_layer_mega_transect_ouest_feat= null;
+	var name_layer_500m="yangambi_transect:TransectOuest_Intervalles500m";
+	var wms_layer_500m= null;
+	var default_visibility=true;
+	var source_interactive_wms_features=null;
+	var path_icon_wfs='./img/up-arrow-hand-drawn-outline-svgrepo-com.svg';
+	var highlight_features=null;
+	var features_highlighted=false;
+	var dict_mega_trans={};
+	
+	var wfs_transect_ouest_features= wfs_url + "service=WFS&version=1.0.0&srsName=EPSG:4326&request=GetFeature&typename="+name_layer_mega_transect_ouest_feat+"&outputFormat=application%2Fjson";
+	
+	dict_mega_trans["chk_mega_transect_ouest_feat_field"]="CP";
+	dict_mega_trans["chk_mega_transect_ouest_feat_marais"]="Fma";
+	dict_mega_trans["chk_mega_transect_ouest_feat_jachere"]="JJ";
+	dict_mega_trans["chk_mega_transect_ouest_feat_primaire"]="FP";
+	dict_mega_trans["chk_mega_transect_ouest_feat_secondaire"]="FS";
+	dict_mega_trans["chk_mega_transect_ouest_feat_undefined"]="UNK";
+	
+	
+	//WFS
+	
+	
+	var parse_show_arrow_wfs_transect=function(url, cql)
+	{
+		if(features_highlighted)
+		{
+			map.removeLayer(highlight_features);
+		}
+		console.log("WFS");
+		var data= {
+			"cql_filter":cql
+		};
+		var list=$.getJSON( url, data,function( result ) 
+								{
+									console.log(result);
+									if("features" in result)
+									{
+										
+										if(result["features"].length>0)
+										{
+											var list_feats_wfs=Array();
+											for(var i=0; i< result["features"].length; i++)
+											{
+												var item=result["features"][i];
+												var tmp_coord=item["geometry"]["coordinates"][0];
+												console.log(tmp_coord);
+												var x_mean=(tmp_coord[0][0]+tmp_coord[1][0])/2;
+												var y_mean=(tmp_coord[0][1]+tmp_coord[1][1])/2;
+												console.log(x_mean);
+												console.log(y_mean);
+												
+												var icon_style = new ol.style.Style({
+												  image: new ol.style.Icon({
+													anchor: [0, 0],												
+													src: path_icon_wfs
+												  }),
+												});
+												
+												var icon_feature=new ol.Feature(
+													{
+														geometry: new ol.geom.Point([x_mean, y_mean])
+													}
+												);
+												icon_feature.setStyle(icon_style);
+												list_feats_wfs.push(icon_feature);
+											}
+										}
+										var  high_source = new ol.source.Vector(
+											{
+												features: list_feats_wfs
+											}
+										);
+										highlight_features=new ol.layer.Vector(
+											{
+											 source: high_source,
+											}
+										);
+										
+										map.addLayer(highlight_features);
+										features_highlighted=true;
+		
+									}
+								
+								});
+	}
+	
+	//WMS
+	
+	
+	var enable_layer=function(ctrl, id_layer)
+	{
+		var checked=$(ctrl).prop("checked");
+		var visible=false;
+		if(checked)
+		{
+			visible=true;	
+		}
+		if(visible)
+		{
+		
+		}
+		visibility[id_layer]=visible;
+		
+		
+		
+	}
+	
+	
+	
+	
+	var hide_show_display=function(name_layer, layer)
+	{
+		if(global_visibility[name_layer])
+		{			
+			//map.addLayer(layer);
+			layer.setVisible(true);
+			console.log("removed "+name_layer);
+		}
+		else
+		{			
+			//map.removeLayer(layer);
+			layer.setVisible(false);
+			console.log("added "+name_layer);
+		}
+	}
+
+	//WMS
+	var init_src_wms_cql=function(url, tmp_layer, cql)
+	{
+		tmp_layer.getSource().updateParams({'CQL_FILTER':cql});
+		//tmp_layer.getSource().refesh();
+		map.updateSize();
+		
+		
+		return tmp_layer;
+	}
+	
+	var init_src_wms=function(url, name_layer)
+	{
+		var tmp_layer_source;
+		var tmp_layer;
+		tmp_layer_source=new ol.source.TileWMS(
+			{
+				url: url ,
+				serverType: 'geoserver',
+				params: {'LAYERS':name_layer , 'TILED': true, 'srs':crs_map},
+				transition: 0,
+			}
+		);
+		tmp_layer=new ol.layer.Tile(
+			{
+				source: tmp_layer_source
+			}
+		);
+		
+		return tmp_layer;
+	}
+	
+	
+	var create_wms_layer=function(p_wms_url, name_layer, layer, ctrl_check, initial_visibility)
+	{
+		layer=init_src_wms(p_wms_url, name_layer);
+		map.addLayer(layer);
+		global_visibility[name_layer]=true;
+		hide_show_display(name_layer, layer );
+			
+		attach_check(ctrl_check, name_layer, layer);
+		$(ctrl_check).prop("checked", initial_visibility);	
+		layer.setVisible(initial_visibility);
+		return layer;
+		
+	}
+	
+	var add_wms_layers=function()
+	{
+		
+		create_wms_layer(wms_url, name_layer_limit_rby, wms_layer_limit_rby, "#chk_limit_rby", false);
+		create_wms_layer(wms_url, name_layer_roads, wms_layer_roads, "#chk_routes", true);
+		create_wms_layer(wms_url, name_layer_surface, wms_layer_surface, "#chk_surface", false);
+		create_wms_layer(wms_url, name_layer_surface, wms_layer_surface, "#chk_surface", true);
+		create_wms_layer(wms_url, name_layer_hydro, wms_layer_hydro, "#chk_hydro", true);
+		create_wms_layer(wms_url, name_layer_mega_transect, wms_layer_mega_transect, "#chk_mega_transect", true);
+		wms_layer_mega_transect_ouest_feat=create_wms_layer(wms_url, name_layer_mega_transect_ouest_feat, wms_layer_mega_transect_ouest_feat, "#chk_mega_transect_ouest_feat", true);
+		//source_interactive_wms_features=wms_layer_mega_transect_ouest_feat.getSource();
+		create_wms_layer(wms_url, name_layer_500m, name_layer_500m, "#chk_inter_500", true);
+		
+		console.log("wms_added");
+	}
+	
+	var init=function()
+	{
+		
+		osm_background=new ol.layer.Tile(
+				{
+				source: new ol.source.OSM(),
+				visible: false,
+				
+				}
+			);
+		esri_background=new ol.layer.Tile(
+				{
+				visible: true,
+				source: new ol.source.XYZ(
+					{
+					attributions:
+					'Tiles © <a href="https://services.arcgisonline.com/ArcGIS/' +
+						'rest/services/World_Topo_Map/MapServer">ArcGIS</a>',
+						url:'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+						'World_Imagery/MapServer/tile/{z}/{y}/{x}'
+					}
+				)
+				}
+			);
+			wms_layer_limit_rby=init_src_wms(wms_url, name_layer_limit_rby);
+			//position mouse
+			 mousePositionControl = new ol.control.MousePosition({
+			  
+			  projection: crs_map,
+			  // comment the following two lines to have the mouse position
+			  // be placed within the map.
+			  className: 'custom-mouse-position',
+			  target: document.getElementById('mouse-position'),
+			  undefinedHTML: '&nbsp;',
+			});
+			
+			//barre échelle
+			 scaleline =new ol.control.ScaleLine({
+			  //units: unitsSelect.value,
+			});
+			
+			map=new ol.Map(
+			{
+				  controls: ol.control.defaults.defaults().extend([mousePositionControl, scaleline]),		  
+				  target:"map", 
+				  layers: [esri_background, osm_background],
+				   view: new ol.View(
+				   { 
+						projection:crs_map,
+						center: [24.390,0.86],
+						zoom: 13
+					})			
+			});
+			
+			add_wms_layers();
+			
+			$(".filter_ouest_feat").change(
+			
+				function()
+				{
+					var list_shown=Array();
+					$(".filter_ouest_feat").each(function() 
+						{
+							var tmp_id=this.id;
+							console.log(tmp_id);
+							var get_checked=$("#"+tmp_id).prop("checked");
+							console.log(get_checked);
+							var value_sub_cat=dict_mega_trans[this.id];
+							console.log(value_sub_cat);
+							if(get_checked)
+							{
+								list_shown.push("vegeoues_8='"+value_sub_cat+"'");
+							}
+						
+						});
+					console.log(list_shown);
+					wms_layer_mega_transect_ouest_feat=init_src_wms_cql(wms_url,  wms_layer_mega_transect_ouest_feat,list_shown.join(" OR "));
+					
+					parse_show_arrow_wfs_transect(wfs_transect_ouest_features, list_shown.join(" OR "));
+					//var params = wms_layer_mega_transect_ouest_feat.getSource().getParams();
+					//wms_layer_mega_transect_ouest_feat.getSource().updateParams(params);
+					
+				}
+			);
+			
+			
+	
+	}
+	
+	var attach_check=function(ctrl_id, name_layer, layer)
+	{
+		$(ctrl_id).change(
+				function()
+				{
+					console.log($(ctrl_id).prop("checked"));
+					console.log(name_layer);
+					global_visibility[name_layer]=$(ctrl_id).prop("checked");
+					hide_show_display(name_layer, layer);
+				}
+			);
+	}
+	
+	$(document).ready(
+		function()
+		{
+			console.log("ready");
+			init();
+			//
+			
+			
+			
+			
+			$("#select_background").change(
+				function()
+				{
+					
+					var tmp_val=$("#select_background").val();
+					if(tmp_val=="ESRI_SAT")
+					{
+						esri_background.setVisible(true);
+						osm_background.setVisible(false);
+					}
+					else if(tmp_val=="OpenStreetMap")
+					{
+						esri_background.setVisible(false);
+						osm_background.setVisible(true);
+					}
+				}
+			);
+			
+			$("#clean_highlight").click(
+				function()
+				{
+					if(features_highlighted)
+					{
+						map.removeLayer(highlight_features);
+						features_highlighted=false;
+					}
+				}
+			);
+		}
+	);
+</script>
+</body>
+</html>
