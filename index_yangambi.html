@@ -1,4 +1,4 @@
-﻿
+
 <html>
 <head>
 <meta charset="UTF-8">
@@ -107,7 +107,12 @@
 					<div class="col-md-2">
 						<input type="checkbox" class="filter_ouest_feat" name="chk_mega_transect_ouest_feat_undefined" id="chk_mega_transect_ouest_feat_undefined" checked />
 					</div>
-					<input type="button" id="clean_highlight" name="clean_highlight" value="Clean highlight"/>
+					<br/>
+					
+					<div class="col-md-10">Arrows (locator)</div>
+					<div class="col-md-2">
+						<input type="checkbox" class="filter_ouest_feat" name="chk_locator" id="chk_locator"  />
+					</div>
 			</div>
 			
 		</div>
@@ -116,6 +121,10 @@
 
 <script>
 	var map;
+	var map_center=[24.390,0.86];
+	var map_init_zoom=13;
+	var map_max_zoom_level=17;
+	
 	var crs_map="EPSG:4326";
 	var osm_background;
 	var esri_background;
@@ -142,7 +151,7 @@
 	var source_interactive_wms_features=null;
 	var path_icon_wfs='./img/up-arrow-hand-drawn-outline-svgrepo-com.svg';
 	var highlight_features=null;
-	var features_highlighted=false;
+	var features_highlighted=true;
 	var dict_mega_trans={};
 	
 	var wfs_transect_ouest_features= wfs_url + "service=WFS&version=1.0.0&srsName=EPSG:4326&request=GetFeature&typename="+name_layer_mega_transect_ouest_feat+"&outputFormat=application%2Fjson";
@@ -160,17 +169,16 @@
 	
 	var parse_show_arrow_wfs_transect=function(url, cql)
 	{
-		if(features_highlighted)
-		{
-			map.removeLayer(highlight_features);
-		}
-		console.log("WFS");
+		
+		map.removeLayer(highlight_features);
+		
+		
 		var data= {
 			"cql_filter":cql
 		};
 		var list=$.getJSON( url, data,function( result ) 
 								{
-									console.log(result);
+									
 									if("features" in result)
 									{
 										
@@ -181,12 +189,10 @@
 											{
 												var item=result["features"][i];
 												var tmp_coord=item["geometry"]["coordinates"][0];
-												console.log(tmp_coord);
+												
 												var x_mean=(tmp_coord[0][0]+tmp_coord[1][0])/2;
 												var y_mean=(tmp_coord[0][1]+tmp_coord[1][1])/2;
-												console.log(x_mean);
-												console.log(y_mean);
-												
+																								
 												var icon_style = new ol.style.Style({
 												  image: new ol.style.Icon({
 													anchor: [0, 0],												
@@ -215,7 +221,8 @@
 										);
 										
 										map.addLayer(highlight_features);
-										features_highlighted=true;
+										
+										highlight_features.setVisible($("#chk_locator").prop("checked"));
 		
 									}
 								
@@ -248,28 +255,27 @@
 	
 	var hide_show_display=function(name_layer, layer)
 	{
-		if(global_visibility[name_layer])
-		{			
-			//map.addLayer(layer);
-			layer.setVisible(true);
-			console.log("removed "+name_layer);
-		}
-		else
-		{			
-			//map.removeLayer(layer);
-			layer.setVisible(false);
-			console.log("added "+name_layer);
+		if(layer !==null)
+		{
+			if(global_visibility[name_layer])
+			{	
+				layer.setVisible(true);			
+			}
+			else
+			{			
+				layer.setVisible(false);
+				
+			}
 		}
 	}
 
 	//WMS
-	var init_src_wms_cql=function(url, tmp_layer, cql)
+	var init_src_wms_cql=function(url, tmp_layer, cql, visibility)
 	{
-		tmp_layer.getSource().updateParams({'CQL_FILTER':cql});
-		//tmp_layer.getSource().refesh();
+		tmp_layer.getSource().updateParams({'CQL_FILTER':cql});		
 		map.updateSize();
 		
-		
+		tmp_layer.setVisible(visibility);
 		return tmp_layer;
 	}
 	
@@ -322,7 +328,7 @@
 		//source_interactive_wms_features=wms_layer_mega_transect_ouest_feat.getSource();
 		create_wms_layer(wms_url, name_layer_500m, name_layer_500m, "#chk_inter_500", true);
 		
-		console.log("wms_added");
+		
 	}
 	
 	var init=function()
@@ -374,8 +380,9 @@
 				   view: new ol.View(
 				   { 
 						projection:crs_map,
-						center: [24.390,0.86],
-						zoom: 13
+						center: map_center,
+						zoom: map_init_zoom,
+						maxZoom:map_max_zoom_level
 					})			
 			});
 			
@@ -389,19 +396,24 @@
 					$(".filter_ouest_feat").each(function() 
 						{
 							var tmp_id=this.id;
-							console.log(tmp_id);
+							
 							var get_checked=$("#"+tmp_id).prop("checked");
-							console.log(get_checked);
+							
 							var value_sub_cat=dict_mega_trans[this.id];
-							console.log(value_sub_cat);
+							
 							if(get_checked)
 							{
 								list_shown.push("vegeoues_8='"+value_sub_cat+"'");
 							}
 						
 						});
-					console.log(list_shown);
-					wms_layer_mega_transect_ouest_feat=init_src_wms_cql(wms_url,  wms_layer_mega_transect_ouest_feat,list_shown.join(" OR "));
+					
+					var tmp_visibility=true;
+					if(list_shown.length==0)
+					{
+						tmp_visibility=false;
+					}
+					wms_layer_mega_transect_ouest_feat=init_src_wms_cql(wms_url,  wms_layer_mega_transect_ouest_feat,list_shown.join(" OR "),tmp_visibility);
 					
 					parse_show_arrow_wfs_transect(wfs_transect_ouest_features, list_shown.join(" OR "));
 					//var params = wms_layer_mega_transect_ouest_feat.getSource().getParams();
@@ -418,9 +430,7 @@
 	{
 		$(ctrl_id).change(
 				function()
-				{
-					console.log($(ctrl_id).prop("checked"));
-					console.log(name_layer);
+				{					
 					global_visibility[name_layer]=$(ctrl_id).prop("checked");
 					hide_show_display(name_layer, layer);
 				}
@@ -430,12 +440,12 @@
 	$(document).ready(
 		function()
 		{
-			console.log("ready");
+		
 			init();
 			//
 			
 			
-			
+			attach_check("#chk_locator", "locator", highlight_features );
 			
 			$("#select_background").change(
 				function()
@@ -455,16 +465,9 @@
 				}
 			);
 			
-			$("#clean_highlight").click(
-				function()
-				{
-					if(features_highlighted)
-					{
-						map.removeLayer(highlight_features);
-						features_highlighted=false;
-					}
-				}
-			);
+			
+			
+			
 		}
 	);
 </script>
