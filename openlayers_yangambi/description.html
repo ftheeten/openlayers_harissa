@@ -1,0 +1,199 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<script src="./js/ol/7_3_0/dist/ol.js"></script>
+<link rel="stylesheet" href="./js/ol/7_3_0/ol.css">
+<script src="./js/jquery/jquery-3.6.4.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+<link href="./js/select2/css/select2.min.css" rel="stylesheet" />
+<script src="./js/select2/js/select2.full.min.js"></script>
+</head>
+<body>
+<div class="container">
+<div class="row">
+		<div class="com-sm-12">
+			<div id="map" style="width:50%; height:400px;">
+			</div>
+		
+		<div id="mouse-position"></div>
+		<div id="popup" class="ol-popup">
+			  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+			  <div id="popup-content"></div>
+		 </div>
+        <div>	
+		Fond de carte <select id="select_background">
+						<option value="OpenStreetMap">OpenStreetMap</option>
+						<option value="esri" selected="selected">ESRI satellite</option>
+					 </select>
+	</div>
+	<div class="row">
+	<div class="com-sm-12">
+		Description:
+		<table id="table_description" name="table_description" class="table_description">
+			<tbody id="body_table">
+			</tbody>
+		</table>
+	</div>
+	</div>
+</div>
+</div>
+<script>
+var map;
+var crs_map="EPSG:4326";
+var map_center=[24.6,0.9];
+var map_init_zoom=10;
+var map_max_zoom_level=17;
+var layer_map="yangambi_transect:mv_megatransect_sectors_1_1_all_agg_count_by_species";
+var layer_details="yangambi_transect:mv_megatransect_sectors_1_1_all";
+var cql_filter="";
+
+var wms_url="https://edit.africamuseum.be/geoserver/yangambi_transect/wms?";
+var wfs_url="https://edit.africamuseum.be/geoserver/yangambi_transect/wfs?";
+var wfs_query=wfs_url+"service=WFS&version=1.0.0&request=GetFeature&outputFormat=application%2Fjson&"
+var wms_layer=null;
+
+
+function init(p_id)
+{
+
+
+    cql_filter="subplot_code='"+p_id+"'";
+	osm_background=new ol.layer.Tile(
+				{
+				source: new ol.source.OSM(),
+				visible: false,
+				
+				}
+			);
+		esri_background=new ol.layer.Tile(
+				{
+				visible: true,
+				source: new ol.source.XYZ(
+					{
+					attributions:
+					'Tiles © <a href="https://services.arcgisonline.com/ArcGIS/' +
+						'rest/services/World_Topo_Map/MapServer">ArcGIS</a>',
+						url:'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+						'World_Imagery/MapServer/tile/{z}/{y}/{x}'
+					}
+				)
+				}
+			);
+			
+			//position mouse
+			 mousePositionControl = new ol.control.MousePosition({
+			  
+			  projection: crs_map,
+			  // comment the following two lines to have the mouse position
+			  // be placed within the map.
+			  className: 'custom-mouse-position',
+			  target: document.getElementById('mouse-position'),
+			  undefinedHTML: '&nbsp;',
+			});
+			
+			//barre échelle
+			 scaleline =new ol.control.ScaleLine({
+			  //units: unitsSelect.value,
+			});
+			
+			map=new ol.Map(
+			{
+				  controls: ol.control.defaults.defaults().extend([mousePositionControl, scaleline]),		  
+				  target:"map", 
+				  layers: [esri_background, osm_background],
+				   view: new ol.View(
+				   { 
+						projection:crs_map,
+						center: map_center,
+						zoom: map_init_zoom,
+						maxZoom:map_max_zoom_level
+					})			
+			});
+			
+			var tmp_layer_source=new ol.source.TileWMS(
+			{
+				url: wms_url ,
+				serverType: 'geoserver',
+				params: {'LAYERS':layer_map , 'TILED': true, 'srs':crs_map, cql_filter:cql_filter},
+				transition: 0,
+			}
+			);
+			wms_layer=new ol.layer.Tile(
+			{
+				source: tmp_layer_source
+			}
+			);
+			map.addLayer(wms_layer);
+			var wfs_query_for_center=wfs_query+"&typename="+layer_map+"&cql_filter="+cql_filter;
+			
+			$.ajax({
+				  url: wfs_query_for_center,
+				  
+				  dataType: 'json',
+				  success: function (data) {
+							console.log(data);
+							if(data["features"].length>0)
+							{
+								var x_center=data["features"][0]["properties"]["x_center_wgs84"];
+								var y_center=data["features"][0]["properties"]["y_center_wgs84"];
+								console.log([x_center,y_center ]);
+								map.getView().setCenter([x_center,y_center ]);
+								map.getView().setZoom(17);
+								var tmp_properties=data["features"][0]["properties"];
+								$.each(tmp_properties,function(index,value){ 
+									$("#table_description").append("<tr  style='vertical-align:text-top;'><td>"+index+"</td><td>"+value+"</td></tr>");
+								});
+							}
+				  }
+				});
+}
+var findGetParameter=function(parameterName) 
+{
+    var result = null,
+        tmp = [];
+    location.search
+        .substr(1)
+        .split("&")
+        .forEach(function (item) {
+          tmp = item.split("=");
+          if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+        });
+    return result;
+}
+
+
+$(document).ready(
+
+	function()
+	{
+		console.log("init");
+		id=findGetParameter("id");
+		console.log(id);
+		init(id);
+		$("#select_background").change(
+			function()
+			{
+				console.log($("#select_background").val());
+				var tmp_val=$("#select_background").val();
+				if(tmp_val=="esri")
+				{
+					esri_background.setVisible(true);
+					osm_background.setVisible(false);
+				}
+				else if(tmp_val=="OpenStreetMap")
+				{
+					esri_background.setVisible(false);
+					osm_background.setVisible(true);
+				}
+			}
+		);
+		
+		
+	});
+</script>
+</body>
+</html>
